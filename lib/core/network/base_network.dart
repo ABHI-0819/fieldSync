@@ -13,15 +13,15 @@ class BaseNetwork {
   }
 
   //202.189.224.222:9071 Internal Server
-  static const String _BASE_URL_Release = "https://sika-tree-survey-backend-production.up.railway.app/";
-  static const String _BASE_URL_Debug = "https://sika-tree-survey-backend-production.up.railway.app/";
+  static const String _BASE_URL_Release = "https://builtree.sikasolutions.in/";
+  static const String _BASE_URL_Debug = "https://builtree.sikasolutions.in/";
   static const String _BASE_URL = kDebugMode ? _BASE_URL_Debug : _BASE_URL_Release;
 
 
   static const String FailedMessage = 'Connection Failed, Please try Again';
   static const String NetworkError= 'Oh no! Something went wrong';
-  static const String BASE_Image_URL ="https://sika-tree-survey-backend-production.up.railway.app/";
-  static const String BASE_Share_URL = 'https://sika-tree-survey-backend-production.up.railway.app/';
+  static const String BASE_Image_URL ="https://builtree.sikasolutions.in/";
+  static const String BASE_Share_URL = 'https://builtree.sikasolutions.in/';
 
   static const String loginURL = "${_BASE_URL}api/v1/auth/login/";
   static const String logoutURL = "${_BASE_URL}api/v1/auth/logout/";

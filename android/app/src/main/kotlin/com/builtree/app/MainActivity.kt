@@ -1,4 +1,4 @@
-package com.sika.fieldsync.fieldsync
+package com.builtree.app
 
 import io.flutter.embedding.android.FlutterActivity
 

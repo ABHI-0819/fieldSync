@@ -23,4 +23,6 @@ class Images {
   static const String aimIcon = '${_basePathSvg}aimIcon.svg';
   static const String markerIcon = '${_basePathSvg}treeMarker.svg';
 
+  static const String logoIcon = '${_basePathImage}logo-bg.png';
+
 }

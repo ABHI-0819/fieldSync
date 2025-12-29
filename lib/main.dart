@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       child: MaterialApp(
-        title:'TREE-SYNC',
+        title:'Builtree',
         builder: EasyLoading.init(),
         debugShowCheckedModeBanner:false,
         theme: ThemeData(

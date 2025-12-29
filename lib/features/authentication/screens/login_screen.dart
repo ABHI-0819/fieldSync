@@ -146,35 +146,35 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                 );
               }
             },
-            child: SafeArea(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Container(
-                  height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
-                  child: Stack(
-                    children: [
-                      // Background decorative elements
-                      _buildBackgroundDecoration(),
-
-                      // Main content
-                      FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: SlideTransition(
-                          position: _slideAnimation,
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height,
+                child: Stack(
+                  children: [
+                    // Background decorative elements
+                    _buildBackgroundDecoration(),
+            
+                    // Main content
+                    FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: SafeArea(
                           child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 24),
+                            padding: EdgeInsets.symmetric(horizontal: 20.w),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 // Top spacer for visual breathing room
                                 SizedBox(height: Spacing.xxLarge.h),
-
+                                      
                                 // Logo and header section
                                 _buildHeaderSection(),
                                 SizedBox(height: 20.h),
                                 // Space before form
                                 SizedBox(height: Spacing.large.h),
-
+                                      
                                 // Login form card
                                 _buildLoginForm(),
                                 // Push footer to bottom
@@ -182,7 +182,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 SizedBox(height: 60.h),
                                 // Footer section
                                 _buildFooter(),
-
+                                      
                                 // Bottom safe padding
                                 SizedBox(height: 30.h),
                               ],
@@ -190,8 +190,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -316,12 +316,13 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     );
   }
 
+  
   Widget _buildLoginForm() {
     return Container(
-      padding: EdgeInsets.all(Spacing.medium.w!),
+      padding: EdgeInsets.all(Spacing.medium.w),
       decoration: BoxDecoration(
         color: AppColor.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
             color: AppColor.primary.withOpacity(0.1),
@@ -480,7 +481,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                   });
                 },
                 icon: Icon(
-                  _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                  _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
                   color: AppColor.textMuted,
                   size: 20.sp,
                 ),
@@ -488,8 +489,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                   : null,
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 16,
+                horizontal: 15.w,
+                vertical: 15.h,
               ),
             ),
           ),
@@ -500,14 +501,14 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   Widget _buildModernButton() {
     return Container(
-      height: 56.h,
+      height: 50.h,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColor.primary, AppColor.primaryLight],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
-        borderRadius: BorderRadius.circular(16.r!),
+        borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
             color: AppColor.primary.withOpacity(0.4),
