@@ -38,7 +38,7 @@ jobs:
           echo "${{ secrets.KEYSTORE }}" | base64 --decode > $HOME/keystore.jks
 
       - name: Build App Bundle (.aab)
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --refresh-dependencies
         env:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
