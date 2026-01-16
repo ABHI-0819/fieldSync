@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../common/bloc/api_event.dart';
 import '../../../common/models/response.mode.dart';
 import '../../../common/repository/project_repository.dart';
-import '../../../core/network/base_network_status.dart';
+import '../../../core/network/network_status.dart';
 import '../../../core/utils/logger.dart';
 import '../models/project_dashboard_response_model.dart';
 import '../models/project_detail_response_model.dart';
@@ -31,19 +31,19 @@ class ProjectListBloc extends Bloc<ApiEvent, ApiState<ProjectListResponseModel, 
 
       switch (result.status) {
         case ApiStatus.success:
-          emit(ApiSuccess(result.response));
+          emit(ApiSuccess(result.success!));
           break;
 
         case ApiStatus.refreshTokenExpired:
-          emit(TokenExpired(result.response));
+          emit(TokenExpired(result.error!));
           break;
 
         case ApiStatus.unAuthorized:
-          emit(ApiFailure(result.response));
+          emit(ApiFailure(result.error!));
           break;
 
         default:
-          emit(ApiFailure(result.response as ResponseModel));
+          emit(ApiFailure(result.error!));
       }
     } catch (e, stackTrace) {
       debugLog("Error fetching project list: $e",stackTrace: stackTrace);
@@ -76,19 +76,19 @@ class ProjectDetailBloc
 
       switch (result.status) {
         case ApiStatus.success:
-          emit(ApiSuccess(result.response));
+          emit(ApiSuccess(result.success!));
           break;
 
         case ApiStatus.refreshTokenExpired:
-          emit(TokenExpired(result.response));
+          emit(TokenExpired(result.error!));
           break;
 
         case ApiStatus.unAuthorized:
-          emit(ApiFailure(result.response));
+          emit(ApiFailure(result.error!));
           break;
 
         default:
-          emit(ApiFailure(result.response as ResponseModel));
+          emit(ApiFailure(result.error!));
       }
     } catch (e, stackTrace) {
       debugLog("Error fetching project detail: $e", stackTrace: stackTrace);
@@ -131,22 +131,22 @@ class ProjectDashboardBloc
         case ApiStatus.success:
         // Emit success state with the fetched data
         // We assume result.response is ProjectDashboardResponse
-          emit(ApiSuccess(result.response));
+          emit(ApiSuccess(result.success!));
           break;
 
         case ApiStatus.refreshTokenExpired:
         // Emit token expired state
-          emit(TokenExpired(result.response! as ResponseModel));
+          emit(TokenExpired(result.error!));
           break;
 
         case ApiStatus.unAuthorized:
         // Emit unauthorized failure state
-          emit(ApiFailure(result.response! as ResponseModel));
+          emit(ApiFailure(result.error!));
           break;
 
         default:
         // Emit generic failure for other statuses
-          emit(ApiFailure(result.response! as ResponseModel));
+          emit(ApiFailure(result.error!));
       }
     } catch (e, stackTrace) {
       // 5. Catch any unexpected exceptions (e.g., network, parsing error)

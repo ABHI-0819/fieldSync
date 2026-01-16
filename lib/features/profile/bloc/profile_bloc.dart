@@ -6,7 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../common/models/response.mode.dart';
 import '../../../common/repository/profile_repository.dart';
-import '../../../core/network/base_network_status.dart';
+import '../../../core/network/network_status.dart';
 import '../models/profile_response_model.dart';
 
 class ProfileBloc
@@ -25,23 +25,22 @@ class ProfileBloc
     try {
       // Call the repository function
       final result = await repository.getProfileDetail();
-
       switch (result.status) {
         case ApiStatus.success:
-          emit(ApiSuccess(result.response));
+          emit(ApiSuccess(result.success!));
           break;
 
         case ApiStatus.refreshTokenExpired:
           // Handle token expiration
-          emit(TokenExpired(result.response)); // 🚀 go to SignIn
+          emit(TokenExpired(result.error!)); // 🚀 go to SignIn
           break;
 
         case ApiStatus.unAuthorized:
-          emit(ApiFailure(result.response));
+          emit(ApiFailure(result.error!));
           break;
 
         default:
-          emit(ApiFailure(result.response as ResponseModel));
+          emit(ApiFailure(result.error!));
       }
     } catch (e, stackTrace) {
       emit(ApiFailure(ResponseModel(message: 'Something went wrong.')));

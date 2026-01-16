@@ -1,4 +1,5 @@
-import 'package:fieldsync/features/home/screens/main_screen.dart';
+
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,15 +16,15 @@ import '../../../core/config/constants/space.dart';
 import '../../../core/config/route/app_route.dart';
 import '../../../core/config/themes/app_color.dart';
 import '../../../core/config/themes/app_fonts.dart';
-import '../../../core/network/api_connection.dart';
 import '../../../core/storage/preference_keys.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../bloc/auth_bloc.dart';
 import '../models/login_request_model.dart';
 import '../models/login_response_model.dart';
 
+@RoutePage()
 class LoginScreen extends StatefulWidget {
-  static const route = '/login';
+  // static const route = '/login';
 
   const LoginScreen({super.key});
 
@@ -48,7 +49,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   @override
   void initState() {
     _authBloc = AuthBloc(
-      LoginRepository(api: ApiConnection()),
+      LoginRepository(),
     );
     emailController = TextEditingController();
     passwordController = TextEditingController();
@@ -116,7 +117,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                 EasyLoading.dismiss();
                 final userRole =state.data.data.user.role;
                 if(userRole=='surveyor'){
-                  AppRoute.goToNextPage(context: context, screen: MainScreen.route, arguments: {});
+                  context.router.replaceAll([const MainRoute()]);
+                  // AppRoute.goToNextPage(context: context, screen: MainScreen.route, arguments: {});
                 }else{
                   IconSnackBar.show(
                     context,
@@ -154,7 +156,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                   children: [
                     // Background decorative elements
                     _buildBackgroundDecoration(),
-            
                     // Main content
                     FadeTransition(
                       opacity: _fadeAnimation,
@@ -168,13 +169,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               children: [
                                 // Top spacer for visual breathing room
                                 SizedBox(height: Spacing.xxLarge.h),
-                                      
                                 // Logo and header section
                                 _buildHeaderSection(),
                                 SizedBox(height: 20.h),
                                 // Space before form
                                 SizedBox(height: Spacing.large.h),
-                                      
                                 // Login form card
                                 _buildLoginForm(),
                                 // Push footer to bottom
@@ -182,7 +181,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 SizedBox(height: 60.h),
                                 // Footer section
                                 _buildFooter(),
-                                      
                                 // Bottom safe padding
                                 SizedBox(height: 30.h),
                               ],

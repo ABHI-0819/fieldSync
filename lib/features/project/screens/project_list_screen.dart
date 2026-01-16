@@ -1,3 +1,4 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:fieldsync/core/utils/logger.dart';
 import 'package:fieldsync/features/project/screens/project_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +13,6 @@ import '../../../common/repository/project_repository.dart';
 import '../../../core/config/route/app_route.dart';
 import '../../../core/config/themes/app_color.dart';
 import '../../../core/config/themes/app_fonts.dart';
-import '../../../core/network/api_connection.dart';
 import '../../maps/screens/map_screen.dart';
 import '../bloc/project_bloc.dart';
 import '../models/project_list_respone_model.dart';
@@ -218,6 +218,7 @@ class ProjectFilterRow extends StatelessWidget {
   }
 }
 
+@RoutePage()
 class ProjectListScreen extends StatefulWidget {
   static const route = '/ProjectList';
   const ProjectListScreen({Key? key}) : super(key: key);
@@ -235,7 +236,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   void initState() {
     super.initState();
     _projectListBloc = ProjectListBloc(
-      ProjectRepository(api: ApiConnection()),
+      ProjectRepository(),
     );
     _fetchProjects(search: '', filter: 'All');
   }
@@ -331,18 +332,11 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColor.primaryLight.withOpacity(0.15),
-                        AppColor.background
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
+                    color: AppColor.background,
                   ),
                   padding: EdgeInsets.symmetric(
-                    horizontal: Spacing.medium.w!,
-                    vertical: Spacing.large.h!,
+                    horizontal: Spacing.medium.w,
+                    vertical: Spacing.large.h,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,8 +377,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(
-                  horizontal: Spacing.medium.w!,
-                  vertical: Spacing.medium.h!,
+                  horizontal: Spacing.medium.w,
+                  vertical: Spacing.medium.h,
                 ),
                 child: Text(
                   '${_selectedFilter} Projects',
@@ -403,18 +397,15 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               child: BlocConsumer<ProjectListBloc,
                   ApiState<ProjectListResponseModel, ResponseModel>>(
                 listener: (context, state) {
-                  if (state is ApiLoading) {
-                    EasyLoading.show(status: 'Loading projects...');
-                  } else if (state is ApiSuccess) {
+                  if (state is ApiSuccess) {
                     EasyLoading.dismiss();
                   } else if (state is ApiFailure<ProjectListResponseModel, ResponseModel>) {
-                    EasyLoading.dismiss();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(state.error.data.toString())),
                     );
                   } else if (state is TokenExpired) {
                     EasyLoading.dismiss();
-                    AppRoute.pushReplacement(context, '/login', arguments: {});
+                    context.router.replaceAll([const LoginRoute()]);
                   }
                 },
                 builder: (context, state) {
@@ -520,16 +511,17 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     }
 
     return Padding(
-      padding: EdgeInsets.only(bottom: Spacing.medium.h!),
+      padding: EdgeInsets.only(bottom: Spacing.medium.h),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(14.r),
           onTap: () {
-            AppRoute.goToNextPage(
-                context: context, screen: ProjectDetailScreen.route, arguments: {
-                  'projectId':project.id
-            });
+            context.router.push(ProjectDetailRoute(projectId: project.id));
+            // AppRoute.goToNextPage(
+            //     context: context, screen: ProjectDetailScreen.route, arguments: {
+            //       'projectId':project.id
+            // });
           },
           child: Container(
             decoration: BoxDecoration(
@@ -548,7 +540,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               ],
             ),
             child: Padding(
-              padding: EdgeInsets.all(14.w!),
+              padding: EdgeInsets.all(14.w),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -556,10 +548,10 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                     children: [
                       Container(
                         padding: EdgeInsets.symmetric(
-                            horizontal: 10.w!, vertical: 4.h!),
+                            horizontal: 10.w, vertical: 4.h),
                         decoration: BoxDecoration(
                           color: AppColor.primary.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(6.r!),
+                          borderRadius: BorderRadius.circular(6.r),
                         ),
                         child: Text(
                           project.code,

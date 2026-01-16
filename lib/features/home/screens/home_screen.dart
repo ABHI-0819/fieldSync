@@ -1,3 +1,4 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:fieldsync/core/config/route/app_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,24 +10,8 @@ import '../../../core/config/resources/images.dart';
 import '../../../core/config/themes/app_color.dart';
 import '../../../core/config/themes/app_fonts.dart';
 import '../../survey/screens/tree_survey_form.dart';
+
 /*
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  @override
-  Widget build(BuildContext context) {
-    return const Placeholder();
-  }
-}
-
- */
-
-
 class HomeScreen extends StatefulWidget {
   static const route = '/surveyor-dashboard';
 
@@ -69,120 +54,186 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColor.background,
-      // appBar: _buildAppBar(),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: RefreshIndicator(
-          onRefresh: _refreshData,
-          color: AppColor.primary,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.all(16.w!),
-            child: SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Welcome Section
-                  _buildWelcomeSection(),
-
-                  SizedBox(height: 24.h),
-
-                  // Survey Categories
-                  _buildSurveyCategoriesSection(),
-
-                  SizedBox(height: 24.h),
-
-                  // Today's Summary
-                  _buildTodaysSummary(),
-
-                  SizedBox(height: 24.h),
-
-                  // Recent Surveys
-                  _buildRecentSurveys(),
-                ],
-              ),
-            ),
+      backgroundColor: AppColor.scaffoldBackground,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // User Greeting Section
+              _buildGreetingSection(),
+              const SizedBox(height: 32),
+              // Statistics Overview
+              _buildStatisticsSection(),
+              const SizedBox(height: 32),
+              // Primary Actions
+              _buildPrimaryActions(context),
+            ],
           ),
         ),
       ),
-      floatingActionButton: _buildFloatingActionButton(),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: AppColor.primary,
-      elevation: 0,
-      title: Text(
-        'Survey Dashboard',
-        style: AppFonts.heading.copyWith(
-          color: AppColor.white,
-          fontSize: 20.sp,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      actions: [
-        IconButton(
-          onPressed: _syncData,
-          icon: Icon(
-            Icons.sync,
-            color: AppColor.white,
-            size: 24.sp,
+  Widget _buildGreetingSection() {
+    final hour = DateTime.now().hour;
+    String greeting = 'Good Morning';
+    
+    if (hour >= 12 && hour < 17) {
+      greeting = 'Good Afternoon';
+    } else if (hour >= 17) {
+      greeting = 'Good Evening';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$greeting,',
+          style: const TextStyle(
+            fontSize: 16,
+            color: AppColor.textSecondary,
+            fontWeight: FontWeight.w400,
+            letterSpacing: 0.2,
           ),
         ),
-        IconButton(
-          onPressed: _showProfile,
-          icon: Icon(
-            Icons.account_circle,
-            color: AppColor.white,
-            size: 24.sp,
+        const SizedBox(height: 4),
+        const Text(
+          'Abhishek',
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w600,
+            color: AppColor.textPrimary,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Ready to make a difference today?',
+          style: TextStyle(
+            fontSize: 14,
+            color: AppColor.textMuted,
+            fontWeight: FontWeight.w400,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildWelcomeSection() {
-    return Container(
-      padding: EdgeInsets.all(20.w!),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColor.primary.withOpacity(0.1), AppColor.background],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  Widget _buildStatisticsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Overview',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppColor.textPrimary,
+            letterSpacing: -0.2,
+          ),
         ),
-        borderRadius: BorderRadius.circular(16.r),
+        const SizedBox(height: 16),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 1.4,
+          children: [
+            _buildStatCard(
+              icon: Icons.park_outlined,
+              count: '1,234',
+              label: 'Trees',
+              color: AppColor.secondary,
+            ),
+            _buildStatCard(
+              icon: Icons.pets_outlined,
+              count: '856',
+              label: 'Fauna',
+              color: AppColor.primary,
+            ),
+            _buildStatCard(
+              icon: Icons.folder_outlined,
+              count: '42',
+              label: 'Projects',
+              color: AppColor.skyBlue,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+ Widget _buildStatCard({
+    required IconData icon,
+    required String count,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColor.cardBackground,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColor.primary.withOpacity(0.2),
+          color: AppColor.border.withOpacity(0.3),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColor.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+        ],
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(
-              height: 50,
-              width: 50,
-              child: SvgPicture.asset(Images.profileFilledIcon)),
-          SizedBox(width: 16.w),
+          Container(
+            // padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: color.withOpacity(0.15),
+                width: 1,
+              ),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Hello, $surveyorName',
-                  style: AppFonts.heading.copyWith(
+                  count,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
                     color: AppColor.textPrimary,
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.8,
+                    height: 1.1,
                   ),
                 ),
-                SizedBox(height: 4.h),
+                const SizedBox(height: 4),
                 Text(
-                  'Ready to survey nature today?',
-                  style: AppFonts.regular.copyWith(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
                     color: AppColor.textSecondary,
-                    fontSize: 14.sp,
+                    letterSpacing: 0.1,
                   ),
                 ),
               ],
@@ -193,460 +244,486 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildSurveyCategoriesSection() {
+  Widget _buildPrimaryActions(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Survey Categories',
-          style: AppFonts.heading.copyWith(
-            color: AppColor.textPrimary,
-            fontSize: 18.sp,
+        const Text(
+          'Quick Actions',
+          style: TextStyle(
+            fontSize: 18,
             fontWeight: FontWeight.w600,
+            color: AppColor.textPrimary,
+            letterSpacing: -0.2,
           ),
         ),
-        SizedBox(height: 16.h),
-
-        // Tree Survey Card
-        _buildSurveyCard(
-          title: 'Trees',
-          count: treesCount,
-          icon: Icons.park,
-          color: AppColor.primary,
-          subtitle: 'Trees surveyed',
-          onTap: () => _navigateToSurvey('tree'),
+        const SizedBox(height: 16),
+        _buildActionButton(
+          icon: Icons.assignment_outlined,
+          label: 'Start Survey',
+          subtitle: 'Begin a new environmental survey',
+          onTap: () {},
+          isPrimary: true,
         ),
-
-        // SizedBox(height: 12.h),
-        //
-        // // Flora Survey Card
-        // _buildSurveyCard(
-        //   title: 'Flora',
-        //   count: floraCount,
-        //   icon: Icons.local_florist,
-        //   color: AppColor.secondary,
-        //   subtitle: 'Plant species recorded',
-        //   onTap: () => _navigateToSurvey('flora'),
-        // ),
-
-        SizedBox(height: 12.h),
-
-        // Fauna Survey Card
-        _buildSurveyCard(
-          title: 'Fauna',
-          count: faunaCount,
-          icon: Icons.pets,
-          color: AppColor.accent,
-          subtitle: 'Animal species recorded',
-          onTap: () => _navigateToSurvey('fauna'),
+        const SizedBox(height: 12),
+        _buildActionButton(
+          icon: Icons.cloud_off_outlined,
+          label: 'Start Offline Survey',
+          subtitle: 'Survey without internet connection',
+          onTap: () {},
+          isPrimary: false,
         ),
       ],
     );
   }
 
-  Widget _buildSurveyCard({
-    required String title,
-    required int count,
+  Widget _buildActionButton({
     required IconData icon,
-    required Color color,
+    required String label,
     required String subtitle,
     required VoidCallback onTap,
+    required bool isPrimary,
   }) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: EdgeInsets.all(16.w!),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppColor.white,
-          borderRadius: BorderRadius.circular(12.r!),
+          color: isPrimary ? AppColor.primary : AppColor.cardBackground,
+          borderRadius: BorderRadius.circular(16),
+          border: isPrimary
+              ? null
+              : Border.all(color: AppColor.border, width: 1.5),
+          boxShadow: isPrimary
+              ? [
+                  BoxShadow(
+                    color: AppColor.primary.withOpacity(0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: AppColor.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isPrimary
+                    ? AppColor.white.withOpacity(0.15)
+                    : AppColor.primary.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: isPrimary ? AppColor.white : AppColor.primary,
+                size: 26,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isPrimary
+                          ? AppColor.white
+                          : AppColor.textPrimary,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: isPrimary
+                          ? AppColor.white.withOpacity(0.85)
+                          : AppColor.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: isPrimary
+                  ? AppColor.white.withOpacity(0.9)
+                  : AppColor.textMuted,
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+}
+*/
+
+class HomeScreen extends StatefulWidget {
+  static const route = '/surveyor-dashboard';
+
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+    _fadeController.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColor.scaffoldBackground,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+                 const SizedBox(height: 20),
+              _buildGreetingSection(),
+              const SizedBox(height: 20),
+                 const Text(
+          'Overview',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColor.textPrimary,
+            letterSpacing: -0.3,
+          ),
+        ),
+              const SizedBox(height: 12),
+              _buildStatisticsSection(),
+              const SizedBox(height: 20),
+              _buildPrimaryActions(context),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGreetingSection() {
+    final hour = DateTime.now().hour;
+    String greeting = 'Good Morning';
+    
+    if (hour >= 12 && hour < 17) {
+      greeting = 'Good Afternoon';
+    } else if (hour >= 17) {
+      greeting = 'Good Evening';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    greeting,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColor.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Abhishek',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: AppColor.textPrimary,
+                      letterSpacing: -0.8,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColor.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColor.primary.withOpacity(0.2),
+                  width: 1.5,
+                ),
+              ),
+              child: Icon(
+                Icons.person_outline,
+                color: AppColor.primary,
+                size: 24,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatisticsSection() {
+    return Wrap(
+      spacing: 10.w,
+      runSpacing: 10.h,
+      direction: Axis.horizontal,
+      alignment: WrapAlignment.start,
+      // crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildStatCard(
+          icon: Icons.park_outlined,
+          count: '1,234',
+          label: 'Total Trees',
+          color: AppColor.secondary,
+        ),
+        // const SizedBox(height: 10),
+        _buildStatCard(
+          icon: Icons.pets_outlined,
+          count: '856',
+          label: 'Total Fauna',
+          color: AppColor.primary,
+        ),
+        // const SizedBox(height: 10),
+        _buildStatCard(
+          icon: Icons.folder_outlined,
+          count: '42',
+          label: 'Projects',
+          color: AppColor.skyBlue,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String count,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      width: 0.44.sw,
+      decoration: BoxDecoration(
+        color: AppColor.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColor.border.withOpacity(0.5),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  count,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColor.textPrimary,
+                    letterSpacing: -0.5,
+                    height: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColor.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPrimaryActions(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Quick Actions',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColor.textPrimary,
+            letterSpacing: -0.3,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _buildActionButton(
+          icon: Icons.add_circle_outline,
+          label: 'Start Survey',
+          subtitle: 'Begin new survey',
+          onTap: () {
+              context.router.push(ProjectListRoute());
+          },
+          color: AppColor.primary,
+          isGradient: true,
+        ),
+        const SizedBox(height: 10),
+        _buildActionButton(
+          icon: Icons.cloud_off_outlined,
+          label: 'Offline Survey',
+          subtitle: 'Survey without internet',
+          onTap: () {},
+          color: AppColor.cardBackground,
+          isGradient: false,
+        ),
+
+      ],
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required VoidCallback onTap,
+    required Color color,
+    required bool isGradient,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: isGradient
+              ? LinearGradient(
+                  colors: [color, color.withOpacity(0.85)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: isGradient ? null : AppColor.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: isGradient
+              ? null
+              : Border.all(color: AppColor.border, width: 1),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.1),
-              spreadRadius: 0,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: isGradient
+                  ? color.withOpacity(0.2)
+                  : AppColor.black.withOpacity(0.03),
+              blurRadius: isGradient ? 10 : 6,
+              offset: Offset(0, isGradient ? 4 : 2),
             ),
           ],
         ),
         child: Row(
           children: [
             Container(
-              width: 48.w,
-              height: 48.h,
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12.r!),
+                color: isGradient
+                    ? AppColor.white.withOpacity(0.2)
+                    : AppColor.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 icon,
-                color: color,
-                size: 24.sp,
+                color: isGradient ? AppColor.white : AppColor.primary,
+                size: 22,
               ),
             ),
-            SizedBox(width: 16.w),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
-                    style: AppFonts.heading.copyWith(
-                      color: AppColor.textPrimary,
-                      fontSize: 16.sp,
+                    label,
+                    style: TextStyle(
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
+                      color: isGradient
+                          ? AppColor.white
+                          : AppColor.textPrimary,
+                      letterSpacing: -0.2,
                     ),
                   ),
-                  SizedBox(height: 2.h),
+                  const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: AppFonts.regular.copyWith(
-                      color: AppColor.textMuted,
-                      fontSize: 12.sp,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                      color: isGradient
+                          ? AppColor.white.withOpacity(0.85)
+                          : AppColor.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
-            Column(
-              children: [
-                Text(
-                  count.toString(),
-                  style: AppFonts.heading.copyWith(
-                    color: color,
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  color: AppColor.textMuted,
-                  size: 16.sp,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTodaysSummary() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Today\'s Progress',
-          style: AppFonts.heading.copyWith(
-            color: AppColor.textPrimary,
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        SizedBox(height: 16.h),
-        Container(
-          padding: EdgeInsets.all(20.w!),
-          decoration: BoxDecoration(
-            color: AppColor.white,
-            borderRadius: BorderRadius.circular(12.r!),
-            boxShadow: [
-              BoxShadow(
-                color: AppColor.black.withOpacity(0.05),
-                spreadRadius: 0,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  children: [
-                    Container(
-                      width: 60.w,
-                      height: 60.h,
-                      decoration: BoxDecoration(
-                        color: AppColor.primary.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          todayCount.toString(),
-                          style: AppFonts.heading.copyWith(
-                            color: AppColor.primary,
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      'Today\'s Surveys',
-                      style: AppFonts.regular.copyWith(
-                        color: AppColor.textSecondary,
-                        fontSize: 12.sp,
-
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 60.h,
-                color: AppColor.divider,
-              ),
-              Expanded(
-                child: Column(
-                  children: [
-                    Container(
-                      width: 60.w,
-                      height: 60.h,
-                      decoration: BoxDecoration(
-                        color: AppColor.success.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${treesCount + floraCount + faunaCount}',
-                          style: AppFonts.heading.copyWith(
-                            color: AppColor.success,
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      'Total Surveys',
-                      style: AppFonts.regular.copyWith(
-                        color: AppColor.textSecondary,
-                        fontSize: 12.sp,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRecentSurveys() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              'Recent Surveys',
-              style: AppFonts.heading.copyWith(
-                color: AppColor.textPrimary,
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const Spacer(),
-            TextButton(
-              onPressed: _viewAllSurveys,
-              child: Text(
-                'View All',
-                style: AppFonts.regular.copyWith(
-                  color: AppColor.primary,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 16.h),
-
-        // Recent survey items
-        _buildRecentSurveyItem(
-          'Oak Tree',
-          'Tree Survey',
-          '2 hours ago',
-          Icons.park,
-          AppColor.primary,
-        ),
-        _buildRecentSurveyItem(
-          'Rose Bush',
-          'Flora Survey',
-          '3 hours ago',
-          Icons.local_florist,
-          AppColor.secondary,
-        ),
-        _buildRecentSurveyItem(
-          'Red Squirrel',
-          'Fauna Survey',
-          '5 hours ago',
-          Icons.pets,
-          AppColor.accent,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRecentSurveyItem(String name, String type, String time, IconData icon, Color color) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 8.h!),
-      padding: EdgeInsets.all(12.w!),
-      decoration: BoxDecoration(
-        color: AppColor.white,
-        borderRadius: BorderRadius.circular(8.r!),
-        border: Border.all(
-          color: AppColor.border,
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32.w,
-            height: 32.h,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(6.r!),
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 16.sp,
-            ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: AppFonts.regular.copyWith(
-                    color: AppColor.textPrimary,
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  type,
-                  style: AppFonts.regular.copyWith(
-                    color: AppColor.textMuted,
-                    fontSize: 12.sp,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            time,
-            style: AppFonts.regular.copyWith(
-              color: AppColor.textMuted,
-              fontSize: 11.sp,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFloatingActionButton() {
-    return FloatingActionButton(
-      onPressed: _showSurveyOptions,
-      backgroundColor: AppColor.primary,
-      child: Icon(
-        Icons.add,
-        color: AppColor.white,
-        size: 28.sp,
-      ),
-    );
-  }
-
-  // Action Methods
-  void _navigateToSurvey(String type) {
-    HapticFeedback.lightImpact();
-    // TODO: Navigate to specific survey type (tree, flora, fauna)
-    AppRoute.goToNextPage(context: context, screen: TreeSurveyFormScreen.route, arguments: {
-      'projectId':'jdfhsdkfkdshf',
-      'latitude':17.3734324,
-      'longitude':74.3248723
-      /*
-               projectId: argument!['projectId'],
-            latitude :argument['latitude'],
-            longitude: argument['longitude'],
-        */
-
-    });
-  }
-
-  void _showSurveyOptions() {
-    HapticFeedback.lightImpact();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColor.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r!)),
-      ),
-      builder: (context) => Container(
-        padding: EdgeInsets.all(20.w!),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Start New Survey',
-              style: AppFonts.heading.copyWith(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(height: 20.h),
-            _buildSurveyOption('Tree Survey', Icons.park, AppColor.primary, 'tree'),
-            _buildSurveyOption('Flora Survey', Icons.local_florist, AppColor.secondary, 'flora'),
-            _buildSurveyOption('Fauna Survey', Icons.pets, AppColor.accent, 'fauna'),
-            SizedBox(height: 20.h),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSurveyOption(String title, IconData icon, Color color, String type) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pop(context);
-        _navigateToSurvey(type);
-      },
-      child: Container(
-        margin: EdgeInsets.only(bottom: 12.h!),
-        padding: EdgeInsets.all(16.w!),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12.r!),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 24.sp),
-            SizedBox(width: 16.w),
-            Text(
-              title,
-              style: AppFonts.regular.copyWith(
-                color: AppColor.textPrimary,
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const Spacer(),
             Icon(
-              Icons.arrow_forward_ios,
-              color: color,
-              size: 16.sp,
+              Icons.arrow_forward_ios_rounded,
+              color: isGradient
+                  ? AppColor.white.withOpacity(0.9)
+                  : AppColor.textMuted,
+              size: 16,
             ),
           ],
         ),
@@ -654,27 +731,5 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _syncData() async {
-    HapticFeedback.lightImpact();
-    EasyLoading.show(status: 'Syncing...');
-    await Future.delayed(const Duration(seconds: 2));
-    EasyLoading.showSuccess('Data synced!');
-  }
 
-  void _showProfile() {
-    HapticFeedback.lightImpact();
-    // TODO: Show profile screen
-  }
-
-  void _viewAllSurveys() {
-    HapticFeedback.lightImpact();
-    // TODO: Navigate to all surveys list
-  }
-
-  Future<void> _refreshData() async {
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() {
-      // Refresh data
-    });
-  }
 }

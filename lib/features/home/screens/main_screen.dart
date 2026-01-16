@@ -1,4 +1,6 @@
 //main_screen
+
+import 'package:auto_route/auto_route.dart';
 import 'package:fieldsync/features/home/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -9,6 +11,8 @@ import '../../../core/config/themes/app_fonts.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../project/screens/project_list_screen.dart';
 
+
+@RoutePage()
 class MainScreen extends StatefulWidget {
   static const route = '/main-screen';
   const MainScreen({Key? key}) : super(key: key);

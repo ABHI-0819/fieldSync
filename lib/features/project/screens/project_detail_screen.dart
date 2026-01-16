@@ -1,3 +1,5 @@
+
+import 'package:auto_route/auto_route.dart';
 import 'package:fieldsync/common/models/response.mode.dart';
 import 'package:fieldsync/core/config/route/app_route.dart';
 import 'package:fieldsync/features/maps/screens/map_screen.dart';
@@ -9,16 +11,13 @@ import '../../../common/bloc/api_event.dart';
 import '../../../common/bloc/api_state.dart';
 import '../../../common/repository/project_repository.dart';
 import '../../../core/config/themes/app_color.dart';
-import '../../../core/network/api_connection.dart';
 
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 // 👇 Your models & bloc
 
 import '../models/project_dashboard_response_model.dart';
 
+@RoutePage()
 class ProjectDetailScreen extends StatefulWidget {
   static const route = '/project-detail';
   final String projectId;
@@ -36,7 +35,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   void initState() {
     super.initState();
     _projectDashboardBloc = ProjectDashboardBloc(
-      ProjectRepository(api: ApiConnection()),
+      ProjectRepository(),
     );
     _projectDashboardBloc.add(ApiFetch(projectId: widget.projectId));
   }
@@ -579,9 +578,10 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           color: Colors.transparent,
           child: InkWell(
             onTap: () {
-              AppRoute.goToNextPage(context: context, screen: MapScreen.route, arguments: {
-                'projectId':widget.projectId
-              });
+              context.router.push(MapRoute(projectId: widget.projectId));
+              // AppRoute.goToNextPage(context: context, screen: MapScreen.route, arguments: {
+              //   'projectId':widget.projectId
+              // });
             },
             borderRadius: BorderRadius.circular(16),
             child: Row(

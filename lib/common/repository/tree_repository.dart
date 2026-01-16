@@ -1,78 +1,73 @@
-
-
 import 'dart:io';
-
-import '../../core/network/api_connection.dart';
+import '../../core/network/api_endpoints.dart';
+import '../../core/network/api_service.dart';
 import '../../core/network/base_network.dart';
-import '../../core/network/base_network_status.dart';
-import '../../core/storage/preference_keys.dart';
-import '../../core/storage/secure_storage.dart';
+import '../../core/network/network_status.dart';
 import '../../core/utils/logger.dart';
 import '../../features/survey/models/tree_request_model.dart';
 import '../../features/survey/models/tree_species_response_model.dart';
 import '../../features/survey/models/tree_survey_list_model.dart';
 import '../models/response.mode.dart';
 import '../models/success_response_model.dart';
-
 class TreeRepository {
-  final ApiConnection? api;
 
-  TreeRepository({this.api});
-
-  final pref = SecurePreference();
+  final ApiService _api = ApiService();
 
   /// Fetch tree species list
-  Future<ApiResult> fetchTreeSpecies() async {
-    final token = await pref.getString(Keys.accessToken);
-
-    ApiResult result = await api!.getApiConnection(
-      BaseNetwork.treeSpeciesUrl, // 👉 define this in BaseNetwork
-      BaseNetwork.getJsonHeadersWithToken(token),
-      treeSpeciesResponseModelFromJson,
+  Future<ApiResult<TreeSpeciesResponseModel, ResponseModel>> fetchTreeSpecies() async {
+    final result = await _api.get<TreeSpeciesResponseModel>(
+      path: ApiEndpoints.treeSpecies,
+      parser: treeSpeciesResponseModelFromJson,
     );
 
-    debugLog(result.status.toString(), name: "Tree Species Loaded");
+    debugLog(
+      "Tree Species Status: ${result.status}",
+      name: "TreeRepository",
+    );
 
     return result;
   }
 
-
-  /// Add a tree survey entry
-  Future<ApiResult> addTreeSurvey(TreeSurveyRequest request, {List<File> images = const []}) async {
-    final token = await pref.getString(Keys.accessToken);
-
-    // Convert request to fields (except images)
+  ///  Add a tree survey entry (Multipart)
+  Future<ApiResult<SuccessResponseModel, ResponseModel>> addTreeSurvey(
+    TreeSurveyRequest request, {
+    List<File> images = const [],
+  }) async {
     final Map<String, dynamic> fields = request.toJson();
-    fields.remove("images"); // handled separately as multipart
+    fields.remove("images"); // images handled separately
 
-    ApiResult result = await api!.apiConnectionMultipart(
-      BaseNetwork.treeSurveyUrl,
-      BaseNetwork.getHeaderWithToken(token),
-      "POST", // 👈 method
-      successResponseModelFromJson, // 👈 parse as ResponseModel
-      fields: request.toJson(),
-      files: images,
-      fileKey: "images", // 👈 must match backend key
+    final result = await _api.upload<SuccessResponseModel>(
+      path: ApiEndpoints.treeSurvey,
+      fields: fields,
+      filePaths: images.map((e) => e.path).toList(),
+      fileKey: "images",
+      parser: successResponseModelFromJson,
     );
 
-    debugLog(result.status.toString(), name: "Tree Survey Added");
+    debugLog(
+      "Tree Survey Add Status: ${result.status}",
+      name: "TreeRepository",
+    );
 
     return result;
   }
-
-
 
   /// Fetch all surveyed trees for a project
-  Future<ApiResult> fetchSurveyedTrees({required String projectId}) async {
-    final token = await pref.getString(Keys.accessToken);
-    final url = api!.generateUrl(baseUrl:BaseNetwork.treeSurveyUrl,projectId: projectId);
-    ApiResult result = await api!.getApiConnection(
-      url,
-      BaseNetwork.getJsonHeadersWithToken(token),
-      treeSurveyResponseListFromJson,
+  Future<ApiResult<TreeSurveyResponseList, ResponseModel>> fetchSurveyedTrees({
+    required String projectId,
+  }) async {
+    final url = "${ApiEndpoints.treeSurvey}?project_id=$projectId";
+
+    final result = await _api.get<TreeSurveyResponseList>(
+      path: url,
+      parser: treeSurveyResponseListFromJson,
     );
-    debugLog(result.status.toString(), name: "Surveyed Trees Loaded");
+
+    debugLog(
+      "Surveyed Trees Status: ${result.status}",
+      name: "TreeRepository",
+    );
+
     return result;
   }
-
 }

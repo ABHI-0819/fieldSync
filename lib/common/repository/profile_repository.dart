@@ -1,29 +1,26 @@
-import 'package:fieldsync/core/network/base_network.dart';
-
-import '../../core/network/api_connection.dart';
-import '../../core/network/base_network_status.dart';
-import '../../core/storage/preference_keys.dart';
-import '../../core/storage/secure_storage.dart';
+import '../../core/network/api_endpoints.dart';
+import '../../core/network/api_service.dart';
+import '../../core/network/network_status.dart';
 import '../../core/utils/logger.dart';
 import '../../features/profile/models/profile_response_model.dart';
+import '../models/response.mode.dart';
+
 
 class ProfileRepository {
-  final ApiConnection? api;
+  final ApiService _api = ApiService();
 
-  ProfileRepository({this.api});
+  Future<ApiResult<ProfileResponseModel, ResponseModel>>
+      getProfileDetail() async {
+    final result = await _api.get<ProfileResponseModel>(
+      path: ApiEndpoints.profile,
+      parser: (json) => profileResponseModelFromJson(json),
+    );
 
-  final pref = SecurePreference();
+    debugLog(
+        "ProfileRepository.getProfileDetail: Status - ${result.status}"
+    );
 
-  Future<ApiResult> getProfileDetail() async {
-    final token = await pref.getString(Keys.accessToken);
-    ApiResult result = await api!.getApiConnection(
-        BaseNetwork.profileUrl,
-        BaseNetwork.getJsonHeadersWithToken(token),
-        profileResponseModelFromJson);
-    debugLog(result.status.toString(), name: "Bhosda Loaded");
-    if (result.status == ApiStatus.success) {
-      return result;
-    }
     return result;
   }
 }
+

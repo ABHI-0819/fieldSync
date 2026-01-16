@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:auto_route/auto_route.dart';
 import 'package:fieldsync/features/authentication/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,7 +17,6 @@ import '../../../core/config/constants/space.dart';
 import '../../../core/config/route/app_route.dart';
 import '../../../core/config/themes/app_color.dart';
 import '../../../core/config/themes/app_fonts.dart';
-import '../../../core/network/api_connection.dart';
 import '../bloc/tree_species_bloc.dart';
 import '../bloc/tree_survey_bloc.dart';
 import '../models/tree_request_model.dart';
@@ -38,6 +37,7 @@ class TreeSpecies {
 
 
 // Main Form Screen
+@RoutePage()
 class TreeSurveyFormScreen extends StatefulWidget {
   final String projectId;
   final double latitude;
@@ -90,7 +90,7 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
   void initState() {
     super.initState();
     _treeSurveyBloc = TreeSurveyBloc(
-      TreeRepository(api: ApiConnection()),
+      TreeRepository(),
     );
   }
 
@@ -329,7 +329,8 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
         );
       } else if (state is TokenExpired) {
         EasyLoading.dismiss();
-        AppRoute.pushReplacement(context, LoginScreen.route, arguments: {});
+        context.router.replaceAll([const LoginRoute()]);
+        // AppRoute.pushReplacement(context, LoginScreen.route, arguments: {});
       }
     },
   child: Form(
@@ -2484,7 +2485,7 @@ class _SpeciesSearchBottomSheetState extends State<SpeciesSearchBottomSheet> {
   void initState() {
     super.initState();
     _speciesBloc = TreeSpeciesBloc(
-      TreeRepository(api: ApiConnection()),
+      TreeRepository(),
     );
     _speciesBloc.add(ApiFetch());
   }
@@ -2547,7 +2548,7 @@ class _SpeciesSearchBottomSheetState extends State<SpeciesSearchBottomSheet> {
             // });
           } else if (state is TokenExpired) {
             EasyLoading.dismiss();
-            AppRoute.pushReplacement(context, '/login', arguments: {});
+            // AppRoute.pushReplacement(context, '/login', arguments: {});
           }
         },
         builder: (context, state) {

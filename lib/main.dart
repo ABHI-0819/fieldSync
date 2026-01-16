@@ -5,14 +5,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/config/route/app_route.dart';
 import 'core/storage/secure_storage.dart';
 
+
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
   SecurePreference();
-  runApp(const MyApp());
+  runApp( MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
+
+  final _appRouter = AppRouter();
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +23,7 @@ class MyApp extends StatelessWidget {
       designSize: const Size(360, 812),
       minTextAdapt: true,
       splitScreenMode: true,
-      child: MaterialApp(
+      child: MaterialApp.router(
         title:'Builtree',
         builder: EasyLoading.init(),
         debugShowCheckedModeBanner:false,
@@ -28,8 +31,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
           useMaterial3: true,
         ),
-        initialRoute: '/',
-        onGenerateRoute: AppRoute().onGenerateRoute,
+        routerConfig: _appRouter.config(),
       ),
     );
   }

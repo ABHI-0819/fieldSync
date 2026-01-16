@@ -1,24 +1,26 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:fieldsync/common/bloc/api_event.dart';
 import 'package:fieldsync/common/repository/profile_repository.dart';
-import 'package:fieldsync/features/authentication/screens/login_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../common/bloc/api_state.dart';
 import '../../../common/models/response.mode.dart';
+import '../../../common/models/success_response_model.dart';
+import '../../../common/repository/login_repository.dart';
 import '../../../core/config/resources/images.dart';
 import '../../../core/config/route/app_route.dart';
 import '../../../core/config/themes/app_color.dart';
 import '../../../core/config/themes/app_fonts.dart';
-import '../../../core/network/api_connection.dart';
+import '../../../core/storage/preference_keys.dart';
+import '../../../core/storage/secure_storage.dart';
+import '../../authentication/bloc/auth_bloc.dart';
 import '../bloc/profile_bloc.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../models/profile_response_model.dart';
-import 'setting_screen.dart';
 
+// Retain the supporting widgets for context
 class ProfileScreen extends StatefulWidget {
   static const route = '/Profile';
 
@@ -29,286 +31,402 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final SecurePreference _securePref = SecurePreference();
 
-  late ProfileBloc _profileBloc;
+  late final ProfileBloc _profileBloc;
+  late final LogoutBloc _logoutBloc;
 
   @override
   void initState() {
-    // 1. Initialize the ProfileBloc
-    _profileBloc = ProfileBloc(
-      ProfileRepository(api: ApiConnection()),
-    );
-    // 2. Dispatch the initial event to fetch profile data
-    _profileBloc.add(ApiFetch());
     super.initState();
+
+    _profileBloc = ProfileBloc(
+      ProfileRepository(),
+    )..add(ApiFetch());
+
+    _logoutBloc = LogoutBloc(LoginRepository());
   }
 
   @override
   void dispose() {
-    // Don't forget to close the bloc
     _profileBloc.close();
+    _logoutBloc.close();
     super.dispose();
   }
 
-  void _onLogoutTapped() {
+  void _onLogoutTapped() async {
+    final refreshToken =
+        await _securePref.getString(Keys.refreshToken);
 
+    _logoutBloc.add(ApiLogout(refreshToken));
+  }
+
+  void _logoutListener(
+    BuildContext context,
+    ApiState<SuccessResponseModel, ResponseModel> state,
+  ) async {
+    if (state is ApiLoading<SuccessResponseModel, ResponseModel>) {
+      EasyLoading.show(status: 'Logging out...');
+    }
+
+    if (state is ApiSuccess<SuccessResponseModel, ResponseModel>) {
+      EasyLoading.dismiss();
+      await _securePref.clear();
+      context.router.replaceAll([const LoginRoute()]);
+    }
+
+    if (state is ApiFailure<SuccessResponseModel, ResponseModel>) {
+      EasyLoading.dismiss();
+      EasyLoading.showError(state.error.message??'Logout Failed.');
+    }
+
+    if (state is TokenExpired<SuccessResponseModel, ResponseModel>) {
+      EasyLoading.dismiss();
+      await _securePref.clear();
+      context.router.replaceAll([const LoginRoute()]);
+      // AppRoute.pushReplacement(
+      //   context,
+      //   LoginScreen.route,
+      //   arguments: {},
+      // );
+    }
+  }
+
+  void _profileListener(
+    BuildContext context,
+    ApiState<ProfileResponseModel, ResponseModel> state,
+  ) {
+    if (state is TokenExpired) {
+      EasyLoading.dismiss();
+      _securePref.clear();
+      context.router.replaceAll([const LoginRoute()]);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Use BlocProvider to provide the ProfileBloc
-    return BlocProvider<ProfileBloc>(
-      create: (context) => _profileBloc,
-      child: Scaffold(
-        backgroundColor: AppColor.scaffoldBackground,
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            // Use BlocConsumer for ProfileBloc
-            child: BlocConsumer<ProfileBloc, ApiState<ProfileResponseModel, ResponseModel>>(
-              listener: (context, state) async {
-                // Handle loading and error states for profile fetching
-                if (state is ApiLoading) {
-                  EasyLoading.show(status: 'Loading Profile...');
-                } else if (state is ApiSuccess<ProfileResponseModel, ResponseModel>) {
-                  EasyLoading.dismiss();
-                } else if (state is ApiFailure<ProfileResponseModel, ResponseModel>) {
-                  EasyLoading.dismiss();
-                  // Show error message
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<ProfileBloc>.value(value: _profileBloc),
+        BlocProvider<LogoutBloc>.value(value: _logoutBloc),
+      ],
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<LogoutBloc,
+              ApiState<SuccessResponseModel, ResponseModel>>(
+            listener: _logoutListener,
+          ),
+        ],
+        child: Scaffold(
+          backgroundColor: AppColor.scaffoldBackground,
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: BlocConsumer<ProfileBloc,
+                  ApiState<ProfileResponseModel, ResponseModel>>(
+                listener: _profileListener,
+                builder: (context, state) {
+                  if (state is ApiSuccess<ProfileResponseModel, ResponseModel>) {
+                    final user = state.data.data;
 
-                } else if (state is TokenExpired) {
-                  EasyLoading.dismiss();
-                  // Handle token expiration: Navigate to Login Screen
-                  AppRoute.pushReplacement(context, LoginScreen.route, arguments: {});
-                }
-              },
-              builder: (context, state) {
-                // Handle UI for different states
-                if (state is ApiSuccess<ProfileResponseModel, ResponseModel>) {
-                  // The data is available in state.data
-                  final userProfileData = state.data.data;
-
-                  return SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        // Profile Picture
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColor.primary.withOpacity(0.3),
-                              width: 2,
-                            ),
-                          ),
-                          child: CircleAvatar(
-                            radius: 50,
-                            backgroundColor: AppColor.primary.withOpacity(0.1),
-                            // Profile picture placeholder/actual image logic here
-                            child: Icon(
-                              Icons.person,
-                              size: 50,
-                              color: AppColor.primary,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // User Info Card
-                        Container(
-                          decoration: BoxDecoration(
-                            color: AppColor.cardBackground,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColor.primary.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
+                    return SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          /// Profile Avatar
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color:
+                                    AppColor.primary.withOpacity(0.3),
+                                width: 2,
                               ),
-                            ],
+                            ),
+                            child: CircleAvatar(
+                              radius: 50,
+                              backgroundColor:
+                                  AppColor.primary.withOpacity(0.1),
+                              child: Icon(
+                                Icons.person,
+                                size: 50,
+                                color: AppColor.primary,
+                              ),
+                            ),
                           ),
-                          child: Column(
+
+                          const SizedBox(height: 24),
+
+                          /// Profile Info
+                          _infoCard(
                             children: [
                               ProfileTile(
                                 icon: Images.nameIcon,
                                 title: 'Name',
-                                // Use fullName from the Profile model
-                                subtitle: userProfileData.fullName,
+                                subtitle: user.fullName,
                               ),
                               ProfileTile(
                                 icon: Images.userTypeIcon,
                                 title: 'User Role',
-                                // Note: 'role' is in the User model, not Profile.
-                                // Assuming you've adjusted your model structure or passed the role separately.
-                                // Using a placeholder for now since the Profile model provided doesn't have 'group'/'role'.
-                                // For a complete solution, you'd fetch the whole User object or augment the Profile model.
-                                subtitle: 'Admin', // Placeholder for User Role
+                                subtitle: 'Surveyor',
                               ),
                               const ProfileTile(
                                 icon: Images.phoneIcon,
                                 title: 'Phone Number',
-                                subtitle: '+91 90878 27282', // Placeholder/Static data
+                                subtitle: '+91 XXXXX XXXXX',
                               ),
                               ProfileTile(
                                 icon: Images.emailIcon,
                                 title: 'Email ID',
-                                // Email is typically in the User model, but we'll use a dummy field if needed
-                                subtitle: userProfileData.email,
+                                subtitle: user.email,
                                 isLast: true,
                               ),
                             ],
                           ),
-                        ),
 
-                        const SizedBox(height: 20),
+                          const SizedBox(height: 20),
 
-                        // Subscription Status Card (Kept as is - uses mock data)
-                        Container(
-                          decoration: BoxDecoration(
-                            color: AppColor.cardBackground,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColor.primary.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
+                          /// Subscription
+                          _infoCard(
+                            children: const [
+                              SubscriptionStatusWidget(),
                             ],
                           ),
-                          child: const SubscriptionStatusWidget(),
-                        ),
 
-                        const SizedBox(height: 20),
-                        // Settings Section
-                        Container(
-                          decoration: BoxDecoration(
-                            color: AppColor.cardBackground,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColor.secondary.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: ListTile(
-                            leading: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColor.secondary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: SvgPicture.asset(
-                                Images.settingIcon,
-                                width: 20,
-                                height: 20,
-                                color: AppColor.secondary,
-                              ),
-                            ),
-                            title: Text(
-                              'Settings',
-                              style: AppFonts.small.copyWith(
-                                fontWeight: FontWeight.w500,
-                                color: AppColor.secondary,
-                              ),
-                            ),
-                            trailing: Icon(
-                              Icons.arrow_forward_ios,
-                              size: 16,
-                              color: AppColor.secondary.withOpacity(0.7),
-                            ),
+                          const SizedBox(height: 20),
+
+                          /// Settings
+                          _actionTile(
+                            icon: Images.settingIcon,
+                            color: AppColor.secondary,
+                            title: 'Settings',
                             onTap: () {
-                              AppRoute.goToNextPage(context: context, screen: SettingScreen.route,arguments: {});
+                              // AppRoute.goToNextPage(
+                              //   context: context,
+                              //   screen: SettingScreen.route,
+                              //   arguments: {},
+                              // );
                             },
                           ),
-                        ),
-                        const SizedBox(height: 20),
-                        // Logout Section
-                        Container(
-                          decoration: BoxDecoration(
-                            color: AppColor.cardBackground,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColor.error.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: ListTile(
-                            leading: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColor.error.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: SvgPicture.asset(
-                                Images.logoutIcon,
-                                width: 20,
-                                height: 20,
-                                color: AppColor.error,
-                              ),
-                            ),
-                            title: Text(
-                              'Logout',
-                              style: AppFonts.small.copyWith(
-                                fontWeight: FontWeight.w500,
-                                color: AppColor.error,
-                              ),
-                            ),
-                            trailing: Icon(
-                              Icons.arrow_forward_ios,
-                              size: 16,
-                              color: AppColor.error.withOpacity(0.7),
-                            ),
-                            onTap: _onLogoutTapped, // Call the new handler
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
-                  );
-                }
 
-                // Handle ApiFailure (The generic error state)
-                if (state is ApiFailure<ProfileResponseModel, ResponseModel>) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: AppColor.error.withOpacity(0.7),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          "Error: ${state.error.message}",
-                          style: AppFonts.small.copyWith(
+                          const SizedBox(height: 20),
+
+                          /// Logout
+                          _actionTile(
+                            icon: Images.logoutIcon,
                             color: AppColor.error,
-                            fontWeight: FontWeight.w500,
+                            title: 'Logout',
+                            onTap: _onLogoutTapped,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                // Handle initial loading and any other states (e.g., TokenExpired which navigates)
-                return const Center(child: CircularProgressIndicator());
-              },
+                        ],
+                      ),
+                    );
+                  }
+                  return _buildShimmerLoading();
+                },
+              ),
             ),
           ),
         ),
       ),
     );
   }
+
+
+  ///Simmer Widgets
+  Widget _buildShimmerLoading() {
+  return Shimmer.fromColors(
+    baseColor: Colors.grey[300]!,
+    highlightColor: Colors.grey[100]!,
+    child: SingleChildScrollView(
+      child: Column(
+        children: [
+          // Profile Avatar Shimmer
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.grey.shade300, width: 2),
+            ),
+            child: CircleAvatar(
+              radius: 50,
+              backgroundColor: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 24),
+          
+          // Profile Info Card Shimmer
+          _shimmerInfoCard(),
+          const SizedBox(height: 20),
+          
+          // Subscription Card Shimmer
+          _shimmerInfoCard(height: 80),
+          const SizedBox(height: 20),
+          
+          // Settings Tile Shimmer
+          _shimmerActionTile(),
+          const SizedBox(height: 20),
+          
+          // Logout Tile Shimmer  
+          _shimmerActionTile(),
+        ],
+      ),
+    ),
+  );
 }
 
-// Retain the supporting widgets for context
+Widget _buildProfileContent() {
+  return Column(
+    children: [
+      // Your existing profile avatar
+      Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColor.primary.withOpacity(0.3), width: 2),
+        ),
+        child: CircleAvatar(
+          radius: 50,
+          backgroundColor: AppColor.primary.withOpacity(0.1),
+          child: Icon(Icons.person, size: 50, color: AppColor.primary),
+        ),
+      ),
+      // ... rest of your existing content
+    ],
+  );
+}
+
+Widget _shimmerInfoCard({double height = 200}) {
+  return Container(
+    height: height,
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade200),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: List.generate(4, (index) => _shimmerTile()),
+      ),
+    ),
+  );
+}
+
+Widget _shimmerTile() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Row(
+      children: [
+        Container(width: 24, height: 24, color: Colors.white),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(width: 80, height: 12, color: Colors.white),
+              const SizedBox(height: 4),
+              Container(width: 120, height: 12, color: Colors.white),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _shimmerActionTile() {
+  return Container(
+    height: 56,
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade200),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(width: 24, height: 24, color: Colors.white),
+          const SizedBox(width: 16),
+          Expanded(child: Container(height: 16, color: Colors.white)),
+        ],
+      ),
+    ),
+  );
+}
+
+  /// =========================
+  /// UI HELPERS
+  /// =========================
+
+
+  Widget _infoCard({required List<Widget> children}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColor.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: AppColor.primary.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _actionTile({
+    required String icon,
+    required Color color,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColor.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: SvgPicture.asset(
+            icon,
+            width: 20,
+            height: 20,
+            color: color,
+          ),
+        ),
+        title: Text(
+          title,
+          style: AppFonts.small.copyWith(
+            fontWeight: FontWeight.w500,
+            color: color,
+          ),
+        ),
+        trailing: Icon(
+          Icons.arrow_forward_ios,
+          size: 16,
+          color: color.withOpacity(0.7),
+        ),
+        onTap: onTap,
+      ),
+    );
+  }
+}
 
 class ProfileTile extends StatelessWidget {
   final String icon;
@@ -388,13 +506,16 @@ class SubscriptionStatusWidget extends StatelessWidget {
 
   // Mock data - replace with actual subscription data from your API
   bool get isSubscriptionActive => true; // This should come from your user data
-  String get subscriptionPlan => "Premium Plan"; // This should come from your user data
-  String get subscriptionExpiryDate => "Dec 31, 2024"; // This should come from your user data
+  String get subscriptionPlan =>
+      "Premium Plan"; // This should come from your user data
+  String get subscriptionExpiryDate =>
+      "Dec 30, 2026"; // This should come from your user data
 
   @override
   Widget build(BuildContext context) {
     // This widget's logic is unchanged from your original code
-    final isSubscriptionActive = this.isSubscriptionActive; // Simplified local variable usage
+    final isSubscriptionActive =
+        this.isSubscriptionActive; // Simplified local variable usage
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -414,7 +535,9 @@ class SubscriptionStatusWidget extends StatelessWidget {
                 ),
                 child: Icon(
                   isSubscriptionActive ? Icons.verified : Icons.warning_amber,
-                  color: isSubscriptionActive ? AppColor.primary : AppColor.warning,
+                  color: isSubscriptionActive
+                      ? AppColor.primary
+                      : AppColor.warning,
                   size: 24,
                 ),
               ),
@@ -435,7 +558,9 @@ class SubscriptionStatusWidget extends StatelessWidget {
                       isSubscriptionActive ? 'Active' : 'Inactive',
                       style: AppFonts.small.copyWith(
                         fontWeight: FontWeight.w500,
-                        color: isSubscriptionActive ? AppColor.success : AppColor.warning,
+                        color: isSubscriptionActive
+                            ? AppColor.success
+                            : AppColor.warning,
                       ),
                     ),
                   ],
@@ -443,14 +568,17 @@ class SubscriptionStatusWidget extends StatelessWidget {
               ),
               // Status badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: isSubscriptionActive
                       ? AppColor.success.withOpacity(0.1)
                       : AppColor.warning.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSubscriptionActive ? AppColor.success : AppColor.warning,
+                    color: isSubscriptionActive
+                        ? AppColor.success
+                        : AppColor.warning,
                     width: 1,
                   ),
                 ),
@@ -459,7 +587,9 @@ class SubscriptionStatusWidget extends StatelessWidget {
                   style: AppFonts.small.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: 10,
-                    color: isSubscriptionActive ? AppColor.success : AppColor.warning,
+                    color: isSubscriptionActive
+                        ? AppColor.success
+                        : AppColor.warning,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -525,7 +655,6 @@ class SubscriptionStatusWidget extends StatelessWidget {
                 ],
               ),
             ),
-
           ] else ...[
             // Inactive subscription UI
             Container(
