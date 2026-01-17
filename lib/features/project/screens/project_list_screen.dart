@@ -518,10 +518,6 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           borderRadius: BorderRadius.circular(14.r),
           onTap: () {
             context.router.push(ProjectDetailRoute(projectId: project.id));
-            // AppRoute.goToNextPage(
-            //     context: context, screen: ProjectDetailScreen.route, arguments: {
-            //       'projectId':project.id
-            // });
           },
           child: Container(
             decoration: BoxDecoration(

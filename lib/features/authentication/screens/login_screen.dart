@@ -12,6 +12,7 @@ import '../../../common/bloc/api_event.dart';
 import '../../../common/bloc/api_state.dart';
 import '../../../common/models/response.mode.dart';
 import '../../../common/repository/login_repository.dart';
+import '../../../common/widgets/app_version_text.dart';
 import '../../../core/config/constants/space.dart';
 import '../../../core/config/route/app_route.dart';
 import '../../../core/config/themes/app_color.dart';
@@ -24,7 +25,7 @@ import '../models/login_response_model.dart';
 
 @RoutePage()
 class LoginScreen extends StatefulWidget {
-  // static const route = '/login';
+  static const route = '/login';
 
   const LoginScreen({super.key});
 
@@ -182,7 +183,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 // Footer section
                                 _buildFooter(),
                                 // Bottom safe padding
-                                SizedBox(height: 30.h),
                               ],
                             ),
                           ),
@@ -587,6 +587,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
             fontSize: 14.sp,
             fontWeight: FontWeight.w500,
           ),
+        ),
+            SizedBox(height: Spacing.medium.h),
+        Padding(
+          padding: EdgeInsets.only(bottom: 16.h),
+          child: const AppVersionText(),
         ),
       ],
     );

@@ -451,53 +451,64 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    greeting,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColor.textSecondary,
-                      fontWeight: FontWeight.w500,
+        Container(
+           decoration: BoxDecoration(
+                    color: AppColor.cardBackground,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColor.border.withOpacity(0.5),
+                      width: 1,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Abhishek',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                      color: AppColor.textPrimary,
-                      letterSpacing: -0.8,
-                      height: 1.2,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12 ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      greeting,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColor.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColor.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColor.primary.withOpacity(0.2),
-                  width: 1.5,
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Abhishek',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: AppColor.textPrimary,
+                        letterSpacing: -0.8,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              child: Icon(
-                Icons.person_outline,
-                color: AppColor.primary,
-                size: 24,
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColor.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColor.primary.withOpacity(0.2),
+                    width: 1.5,
+                  ),
+                ),
+                child: Icon(
+                  Icons.person_outline,
+                  color: AppColor.primary,
+                  size: 24,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );

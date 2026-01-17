@@ -10,6 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../common/bloc/api_event.dart';
 import '../../../common/bloc/api_state.dart';
 import '../../../common/repository/project_repository.dart';
+import '../../../common/widgets/common_gradient_button.dart';
 import '../../../core/config/themes/app_color.dart';
 
 
@@ -59,7 +60,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         preferredSize: const Size.fromHeight(60),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColor.background,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -452,7 +453,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                                       ),
                                     ),
                                     Text(
-                                      '${stats.completedSurveys} / ${stats.totalSurveys}',
+                                      '${stats.completedSurveys} / ${stats.totalTrees}',
                                       style: const TextStyle(
                                         color: AppColor.primary,
                                         fontSize: 14,
@@ -556,72 +557,30 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           },
         ),
       ),
-      floatingActionButton: Container(
-        width: MediaQuery.of(context).size.width - 32,
-        height: 56,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppColor.secondary, AppColor.secondaryDark],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppColor.secondary.withOpacity(0.4),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+bottomNavigationBar: Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+    decoration: BoxDecoration(
+      color: Colors.transparent,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, -2),
         ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              context.router.push(MapRoute(projectId: widget.projectId));
-              // AppRoute.goToNextPage(context: context, screen: MapScreen.route, arguments: {
-              //   'projectId':widget.projectId
-              // });
-            },
-            borderRadius: BorderRadius.circular(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColor.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.add_location_alt,
-                    color: AppColor.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Start Tree Survey',
-                  style: TextStyle(
-                    color: AppColor.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.arrow_forward_rounded,
-                  color: AppColor.white,
-                  size: 24,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      ],
+    ),
+    child: SafeArea(
+      child: CommonGradientButton(
+  text: 'Continue',
+  onTap: onContinue,
+),
+    ),
+  ),
     );
+  }
+
+  void onContinue() {
+    context.router.push(MapRoute(projectId: widget.projectId));
   }
 
   Color _getStatusColor(String status) {

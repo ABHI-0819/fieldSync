@@ -89,8 +89,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     treeSurveyedBloc = TreeSurveyedBloc(
       TreeRepository(),
     );
-    projectDetailBloc.add(ApiFetch(projectId: 'fffc9a01-dc99-426b-ab7d-ce24e2507569'));
-    treeSurveyedBloc.add(ApiFetch(projectId: 'fffc9a01-dc99-426b-ab7d-ce24e2507569'));
+    projectDetailBloc.add(ApiFetch(projectId: widget.projectId));
+    treeSurveyedBloc.add(ApiFetch(projectId: widget.projectId));
     _getCurrentLocation();
   }
 
