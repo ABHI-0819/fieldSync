@@ -1,5 +1,6 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:fieldsync/common/screens/splash_screen.dart';
+import 'package:fieldsync/common/screens/under_development_screen.dart';
 import 'package:flutter/widgets.dart'; 
 import '../../../features/authentication/screens/login_screen.dart';
 import '../../../features/home/screens/main_screen.dart';
@@ -44,7 +45,10 @@ class AppRouter extends RootStackRouter {
       path: ProjectListScreen.route,
       page: ProjectListRoute.page,// Makes this the default/initial route
     ),
-
+    AutoRoute(
+      path: UnderDevelopmentScreen.route,
+      page: UnderDevelopmentRoute.page,// Makes this the default/initial route
+    ),
     // Add more routes here later, e.g., AutoRoute(path: '/home', page: HomeRoute.page)
   ];
 }

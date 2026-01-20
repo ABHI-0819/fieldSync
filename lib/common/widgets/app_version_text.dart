@@ -34,10 +34,13 @@ class _AppVersionTextState extends State<AppVersionText> {
 
     return Text(
       _version,
-      style: AppFonts.regular.copyWith(
-        fontSize: 12.sp,
-        color: AppColor.textMuted,
-      ),
+      textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    letterSpacing: 0.8,
+                    color: Color(0xFF234F1E),
+                    fontWeight: FontWeight.w300,
+                  ),
     );
   }
 }

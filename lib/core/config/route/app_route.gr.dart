@@ -239,3 +239,65 @@ class TreeSurveyFormRouteArgs {
       latitude.hashCode ^
       longitude.hashCode;
 }
+
+/// generated route for
+/// [UnderDevelopmentScreen]
+class UnderDevelopmentRoute extends PageRouteInfo<UnderDevelopmentRouteArgs> {
+  UnderDevelopmentRoute({
+    Key? key,
+    String? featureName,
+    String? message,
+    List<PageRouteInfo>? children,
+  }) : super(
+         UnderDevelopmentRoute.name,
+         args: UnderDevelopmentRouteArgs(
+           key: key,
+           featureName: featureName,
+           message: message,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'UnderDevelopmentRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<UnderDevelopmentRouteArgs>(
+        orElse: () => const UnderDevelopmentRouteArgs(),
+      );
+      return UnderDevelopmentScreen(
+        key: args.key,
+        featureName: args.featureName,
+        message: args.message,
+      );
+    },
+  );
+}
+
+class UnderDevelopmentRouteArgs {
+  const UnderDevelopmentRouteArgs({this.key, this.featureName, this.message});
+
+  final Key? key;
+
+  final String? featureName;
+
+  final String? message;
+
+  @override
+  String toString() {
+    return 'UnderDevelopmentRouteArgs{key: $key, featureName: $featureName, message: $message}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! UnderDevelopmentRouteArgs) return false;
+    return key == other.key &&
+        featureName == other.featureName &&
+        message == other.message;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ featureName.hashCode ^ message.hashCode;
+}

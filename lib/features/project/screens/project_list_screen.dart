@@ -326,7 +326,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             SliverAppBar(
               automaticallyImplyLeading: false,
               backgroundColor: AppColor.cardBackground,
-              expandedHeight: 200.h,
+              expandedHeight: 180.h,
               floating: true,
               snap: false,
               flexibleSpace: FlexibleSpaceBar(
@@ -378,7 +378,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               child: Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: Spacing.medium.w,
-                  vertical: Spacing.medium.h,
+                  vertical: Spacing.small.h,
                 ),
                 child: Text(
                   '${_selectedFilter} Projects',

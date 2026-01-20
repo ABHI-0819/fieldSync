@@ -1,5 +1,4 @@
 //main_screen
-
 import 'package:auto_route/auto_route.dart';
 import 'package:fieldsync/features/home/screens/home_screen.dart';
 import 'package:flutter/material.dart';

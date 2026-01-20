@@ -10,11 +10,11 @@ class TreeMarkerBottomSheet extends StatelessWidget {
   final VoidCallback onNavigate;
 
   const TreeMarkerBottomSheet({
-    Key? key,
+    super.key,
     required this.treeData,
     required this.onDelete,
     required this.onNavigate,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

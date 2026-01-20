@@ -17,6 +17,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../common/bloc/api_state.dart';
 import '../../../common/models/response.mode.dart';
 import '../../../common/screens/tree_marker_bottomsheet.dart';
+import '../../../common/widgets/gps_accuracy_indicator.dart';
 import '../../../core/config/constants/space.dart';
 import '../../../core/config/resources/images.dart';
 import '../../../core/config/themes/app_color.dart';
@@ -537,43 +538,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           ),
 
           // GPS Accuracy indicator
-          if (_gpsAccuracy != null)
             Positioned(
               top: 16,
               left: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.gps_fixed,
-                      size: 16,
-                      color: _gpsAccuracy! < 10 ? Colors.green : _gpsAccuracy! < 50 ? Colors.orange : Colors.red,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '±${_gpsAccuracy!.toInt()}m',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              child: GpsAccuracyIndicator()
             ),
 
           // Zoom controls

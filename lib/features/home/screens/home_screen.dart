@@ -6,9 +6,11 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 
+import '../../../common/widgets/SecureText.dart';
 import '../../../core/config/resources/images.dart';
 import '../../../core/config/themes/app_color.dart';
 import '../../../core/config/themes/app_fonts.dart';
+import '../../../core/storage/preference_keys.dart';
 import '../../survey/screens/tree_survey_form.dart';
 
 /*
@@ -478,8 +480,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'Abhishek',
+                   SecureText(
+                      prefKey: Keys.name,
+                      defaultValue: 'User',
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w700,
@@ -487,7 +490,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         letterSpacing: -0.8,
                         height: 1.2,
                       ),
-                    ),
+                    )
                   ],
                 ),
               ),
@@ -524,21 +527,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       children: [
         _buildStatCard(
           icon: Icons.park_outlined,
-          count: '1,234',
+          count: '1',
           label: 'Total Trees',
           color: AppColor.secondary,
         ),
         // const SizedBox(height: 10),
         _buildStatCard(
           icon: Icons.pets_outlined,
-          count: '856',
+          count: '0',
           label: 'Total Fauna',
           color: AppColor.primary,
         ),
         // const SizedBox(height: 10),
         _buildStatCard(
           icon: Icons.folder_outlined,
-          count: '42',
+          count: '1',
           label: 'Projects',
           color: AppColor.skyBlue,
         ),
@@ -638,7 +641,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           icon: Icons.cloud_off_outlined,
           label: 'Offline Survey',
           subtitle: 'Survey without internet',
-          onTap: () {},
+          onTap: () {
+            context.router.push(UnderDevelopmentRoute(
+              featureName: 'Offline Survey',
+              message:
+                  'This feature is under development. Stay tuned for updates!',
+            ));
+          },
           color: AppColor.cardBackground,
           isGradient: false,
         ),
