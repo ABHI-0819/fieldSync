@@ -16,7 +16,6 @@ import '../../../core/config/themes/app_fonts.dart';
 import '../bloc/project_bloc.dart';
 import '../models/project_list_respone_model.dart';
 
-
 class Project {
   final String id;
   final String pid;
@@ -48,49 +47,49 @@ class Project {
 
   // Mock data for demo
   static List<Project> mockData() => [
-    Project(
-      id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      pid: "PRJ-001",
-      name: "Central Park Tree Survey",
-      code: "CPTS-2024",
-      status: "active",
-      priority: "high",
-      organizationName: "NYC Parks",
-      locationName: "Central Park, Manhattan",
-      startDate: "2024-01-15",
-      endDate: "2024-06-30",
-      expectedTreeCount: 1240,
-      daysRemaining: "45 days",
-    ),
-    Project(
-      id: "4fb96f75-6828-5673-c4gd-3d074g77bgb7",
-      pid: "PRJ-002",
-      name: "Brooklyn Bridge Green Belt",
-      code: "BBGB-2024",
-      status: "completed",
-      priority: "medium",
-      organizationName: "Brooklyn Parks Dept",
-      locationName: "Brooklyn Bridge Area",
-      startDate: "2023-11-10",
-      endDate: "2024-03-01",
-      expectedTreeCount: 872,
-      daysRemaining: "Completed",
-    ),
-    Project(
-      id: "5gc07g86-7939-6784-d5he-4e185h88chc8",
-      pid: "PRJ-003",
-      name: "Hudson Riverfront Restoration",
-      code: "HRR-2024",
-      status: "planning",
-      priority: "low",
-      organizationName: "Hudson River Trust",
-      locationName: "Hudson Riverfront",
-      startDate: "2024-02-20",
-      endDate: "2024-12-15",
-      expectedTreeCount: 2105,
-      daysRemaining: "120 days",
-    ),
-  ];
+        Project(
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          pid: "PRJ-001",
+          name: "Central Park Tree Survey",
+          code: "CPTS-2024",
+          status: "active",
+          priority: "high",
+          organizationName: "NYC Parks",
+          locationName: "Central Park, Manhattan",
+          startDate: "2024-01-15",
+          endDate: "2024-06-30",
+          expectedTreeCount: 1240,
+          daysRemaining: "45 days",
+        ),
+        Project(
+          id: "4fb96f75-6828-5673-c4gd-3d074g77bgb7",
+          pid: "PRJ-002",
+          name: "Brooklyn Bridge Green Belt",
+          code: "BBGB-2024",
+          status: "completed",
+          priority: "medium",
+          organizationName: "Brooklyn Parks Dept",
+          locationName: "Brooklyn Bridge Area",
+          startDate: "2023-11-10",
+          endDate: "2024-03-01",
+          expectedTreeCount: 872,
+          daysRemaining: "Completed",
+        ),
+        Project(
+          id: "5gc07g86-7939-6784-d5he-4e185h88chc8",
+          pid: "PRJ-003",
+          name: "Hudson Riverfront Restoration",
+          code: "HRR-2024",
+          status: "planning",
+          priority: "low",
+          organizationName: "Hudson River Trust",
+          locationName: "Hudson Riverfront",
+          startDate: "2024-02-20",
+          endDate: "2024-12-15",
+          expectedTreeCount: 2105,
+          daysRemaining: "120 days",
+        ),
+      ];
 }
 
 // 👇 Semantic Spacing Constants
@@ -131,9 +130,9 @@ class CommonSearchBar extends StatelessWidget {
             : null,
         suffixIcon: suffixIcon != null
             ? IconButton(
-          icon: Icon(suffixIcon, color: AppColor.primary, size: 20.sp),
-          onPressed: onSuffixTap,
-        )
+                icon: Icon(suffixIcon, color: AppColor.primary, size: 20.sp),
+                onPressed: onSuffixTap,
+              )
             : null,
         hintText: hintText,
         hintStyle: AppFonts.regular.copyWith(
@@ -152,7 +151,8 @@ class CommonSearchBar extends StatelessWidget {
           borderRadius: BorderRadius.circular(12.r!),
           borderSide: BorderSide(color: AppColor.primary, width: 1.5),
         ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.w!, vertical: 12.h!),
+        contentPadding:
+            EdgeInsets.symmetric(horizontal: 16.w!, vertical: 12.h!),
       ),
       onSubmitted: onSubmitted,
     );
@@ -161,7 +161,12 @@ class CommonSearchBar extends StatelessWidget {
 
 // 👇 Filter Row Widget
 class ProjectFilterRow extends StatelessWidget {
-  final List<String> filterOptionList = ['All', 'Active', 'Planning', 'Completed'];
+  final List<String> filterOptionList = [
+    'All',
+    'Active',
+    'Planning',
+    'Completed'
+  ];
   final String selectedFilter;
   final ValueChanged<String> onFilterChanged;
 
@@ -198,7 +203,8 @@ class ProjectFilterRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20.r!),
                 onTap: () => onFilterChanged(filter),
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w!, vertical: 8.h!),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 16.w!, vertical: 8.h!),
                   child: Text(
                     filter,
                     style: AppFonts.regular.copyWith(
@@ -247,15 +253,16 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   }
 
   void _fetchProjects({required String search, required String filter}) {
-    if(filter.toLowerCase()=='all'){
+    if (filter.toLowerCase() == 'all') {
       _projectListBloc.add(
         ApiListFetch(
           page: 1,
           pageSize: 20,
         ),
       );
-    }else{
-      String statusFilter = filter.toLowerCase() == 'all' ? '' : filter.toLowerCase();
+    } else {
+      String statusFilter =
+          filter.toLowerCase() == 'all' ? '' : filter.toLowerCase();
       _projectListBloc.add(
         ApiListFetch(
           search: search,
@@ -278,8 +285,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     setState(() {
       _selectedFilter = selected;
     });
-    debugLog(selected,name: "Filter");
-      _fetchProjects(search: currentSearchQuery, filter: selected);
+    debugLog(selected, name: "Filter");
+    _fetchProjects(search: currentSearchQuery, filter: selected);
   }
 
   void showVoiceSearchBottomSheet(BuildContext context) {
@@ -357,7 +364,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                           hintText: 'Search by name or code...',
                           prefixIcon: Icons.search,
                           suffixIcon: Icons.mic,
-                          onSuffixTap: () => showVoiceSearchBottomSheet(context),
+                          onSuffixTap: () =>
+                              showVoiceSearchBottomSheet(context),
                           onSubmitted: _onSearch,
                         ),
                       ),
@@ -398,7 +406,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                 listener: (context, state) {
                   if (state is ApiSuccess) {
                     EasyLoading.dismiss();
-                  } else if (state is ApiFailure<ProjectListResponseModel, ResponseModel>) {
+                  } else if (state
+                      is ApiFailure<ProjectListResponseModel, ResponseModel>) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(state.error.data.toString())),
                     );
@@ -410,15 +419,15 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                 builder: (context, state) {
                   if (state is ApiLoading) {
                     return _buildShimmerList();
-                  } else if (state is ApiSuccess<ProjectListResponseModel, ResponseModel>) {
+                  } else if (state
+                      is ApiSuccess<ProjectListResponseModel, ResponseModel>) {
                     final projectDataList = state.data.data ?? [];
                     if (projectDataList.isEmpty) {
                       return _buildEmptyState();
                     }
 
-                    final List<Project> uiProjects = projectDataList
-                        .map(_mapProjectDataToProject)
-                        .toList();
+                    final List<Project> uiProjects =
+                        projectDataList.map(_mapProjectDataToProject).toList();
 
                     return _buildProjectList(uiProjects);
                   } else {
@@ -465,10 +474,13 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: Spacing.medium.w!),
       child: Column(
-        children: projects.map((project) => _buildProjectCard(project)).toList(),
+        children:
+            projects.map((project) => _buildProjectCard(project)).toList(),
       ),
     );
   }
+
+  /*
 
   Widget _buildProjectCard(Project project) {
     Color statusColor;
@@ -717,6 +729,291 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         ),
       ),
     );
+  }
+
+*/
+  Widget _buildProjectCard(Project project) {
+    Color statusColor;
+    Color statusBgColor;
+    String statusText;
+
+    switch (project.status.toLowerCase()) {
+      case 'active':
+        statusColor = AppColor.success;
+        statusBgColor = AppColor.success.withOpacity(0.1);
+        statusText = 'Active';
+        break;
+      case 'completed':
+        statusColor = AppColor.textMuted;
+        statusBgColor = AppColor.grey;
+        statusText = 'Completed';
+        break;
+      case 'planning':
+        statusColor = AppColor.accent;
+        statusBgColor = AppColor.accentLight.withOpacity(0.2);
+        statusText = 'Planning';
+        break;
+      default:
+        statusColor = AppColor.textSecondary;
+        statusBgColor = AppColor.grey;
+        statusText = project.status;
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12.h),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16.r),
+          onTap: () {
+            context.router.push(ProjectDetailRoute(projectId: project.id));
+          },
+          child: Container(
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: AppColor.cardBackground,
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: AppColor.border.withOpacity(0.2)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header: Icon + Status Badge
+                Row(
+                  spacing: 10,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        color: AppColor.background,
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Icon(
+                        Icons.folder_outlined,
+                        size: 20.sp,
+                        color: AppColor.textSecondary,
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          project.name,
+                          style: AppFonts.regular.copyWith(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w700,
+                            color: AppColor.textPrimary,
+                            height: 1.3,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Row(
+                          children: [
+                            Icon(Icons.tag,
+                                size: 14.sp, color: AppColor.textMuted),
+                            SizedBox(width: 5.w),
+                            Text(
+                              project.code,
+                              style: AppFonts.regular.copyWith(
+                                fontSize: 12.sp,
+                                color: AppColor.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: statusBgColor,
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6.w,
+                            height: 6.h,
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          SizedBox(width: 5.w),
+                          Text(
+                            statusText,
+                            style: AppFonts.regular.copyWith(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w600,
+                              color: statusColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                20.verticalSpace,
+
+                // Location
+                Row(
+                  children: [
+                    Icon(Icons.location_on_outlined,
+                        size: 14.sp, color: AppColor.textMuted),
+                    SizedBox(width: 5.w),
+                    Expanded(
+                      child: Text(
+                        project.locationName,
+                        style: AppFonts.regular.copyWith(
+                          fontSize: 12.sp,
+                          color: AppColor.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 12.h),
+
+                // Divider
+                Container(
+                  height: 1,
+                  color: AppColor.border.withOpacity(0.2),
+                ),
+
+                SizedBox(height: 12.h),
+
+                // Date Range
+                Row(
+                  children: [
+                    // Start Date
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today_outlined,
+                              size: 13.sp, color: AppColor.accent),
+                          SizedBox(width: 5.w),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Start',
+                                  style: AppFonts.regular.copyWith(
+                                    fontSize: 10.sp,
+                                    color: AppColor.textMuted,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                SizedBox(height: 2.h),
+                                Text(
+                                  _formatDate(project.startDate),
+                                  style: AppFonts.regular.copyWith(
+                                    fontSize: 12.sp,
+                                    color: AppColor.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Separator
+                    Container(
+                      width: 1,
+                      height: 30.h,
+                      color: AppColor.border.withOpacity(0.2),
+                      margin: EdgeInsets.symmetric(horizontal: 8.w),
+                    ),
+
+                    // End Date
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Icon(Icons.event_outlined,
+                              size: 13.sp, color: AppColor.error),
+                          SizedBox(width: 5.w),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'End',
+                                  style: AppFonts.regular.copyWith(
+                                    fontSize: 10.sp,
+                                    color: AppColor.textMuted,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                SizedBox(height: 2.h),
+                                Text(
+                                  _formatDate(project.endDate),
+                                  style: AppFonts.regular.copyWith(
+                                    fontSize: 12.sp,
+                                    color: AppColor.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+// Helper method to format date from string "2026-03-15" to "Mar 15, 2026"
+  String _formatDate(String dateString) {
+    try {
+      // Parse the date string
+      final date = DateTime.parse(dateString);
+
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
+
+      return '${months[date.month - 1]} ${date.day}, ${date.year}';
+    } catch (e) {
+      // If parsing fails, return the original string
+      return dateString;
+    }
   }
 
   Widget _buildEmptyState() {

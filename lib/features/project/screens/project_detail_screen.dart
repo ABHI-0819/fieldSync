@@ -13,7 +13,9 @@ import '../../../common/widgets/common_gradient_button.dart';
 import '../../../core/config/themes/app_color.dart';
 // 👇 Your models & bloc
 
+import '../../../core/config/themes/app_fonts.dart';
 import '../models/project_dashboard_response_model.dart';
+import '../models/project_list_respone_model.dart';
 
 @RoutePage()
 class ProjectDetailScreen extends StatefulWidget {
@@ -121,7 +123,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         preferredSize: const Size.fromHeight(60),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColor.background,
+            color: AppColor.white,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -235,75 +237,29 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: 10),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            overview.name,
-                            style: const TextStyle(
-                              color: AppColor.primary,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            overview.code,
-                            style: TextStyle(
-                              color: AppColor.secondary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          )
-                        ],
+                    20.verticalSpace,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: const Text(
+                        'Project Info',
+                        style: TextStyle(
+                          color: AppColor.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
+                    10.verticalSpace,
+                    _buildProjectCard(ProjectCardData(
+                      id: widget.projectId,
+                      name: overview.name,
+                      code: overview.code,
+                      locationName: overview.locationName,
+                      startDate: overview.startDate!.toUtc(),
+                      endDate: overview.endDate!.toUtc(),
+                      status: overview.status,
+                    )),
                     // Compact Project Overview
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _InfoChip(
-                              icon: Icons.location_on_outlined,
-                              label: overview.locationName,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _InfoChip(
-                              icon: Icons.calendar_today_outlined,
-                              label:
-                                  '${_formatDateShort(overview.startDate)} - ${_formatDateShort(overview.endDate)}',
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: _getStatusColor(overview.status),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              overview.status.toUpperCase(),
-                              style: const TextStyle(
-                                color: AppColor.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
 
                     const SizedBox(height: 16),
 
@@ -428,98 +384,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                       ),
 
                     const SizedBox(height: 18),
-/*
-                    // Progress Overview Card
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Progress Overview',
-                            style: TextStyle(
-                              color: AppColor.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: AppColor.cardBackground,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColor.border),
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'Survey Completion',
-                                      style: TextStyle(
-                                        color: AppColor.textSecondary,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Text(
-                                      '${stats.completedSurveys} / ${stats.totalTrees}',
-                                      style: const TextStyle(
-                                        color: AppColor.primary,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: LinearProgressIndicator(
-                                    value: stats.totalSurveys > 0
-                                        ? stats.completedSurveys /
-                                            stats.totalSurveys
-                                        : 0.0,
-                                    backgroundColor: AppColor.divider,
-                                    valueColor:
-                                        const AlwaysStoppedAnimation<Color>(
-                                            AppColor.secondary),
-                                    minHeight: 8,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      stats.totalSurveys > 0
-                                          ? '${((stats.completedSurveys / stats.totalSurveys) * 100).toStringAsFixed(0)}% Complete'
-                                          : '0% Complete',
-                                      style: const TextStyle(
-                                        color: AppColor.textMuted,
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                    Text(
-                                      '${stats.totalSurveys - stats.completedSurveys} Remaining',
-                                      style: const TextStyle(
-                                        color: AppColor.textMuted,
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-*/
+
                     const SizedBox(height: 18),
 
                     // Recent Surveys
@@ -604,6 +469,269 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     context.router.push(MapRoute(projectId: widget.projectId));
   }
 
+  Widget _buildProjectCard(ProjectCardData project) {
+    Color statusColor = _getStatusColor(project.status);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8.r),
+        onTap: () => context.router.push(MapRoute(projectId: project.id)),
+        child: Container(
+          margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: AppColor.cardBackground,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: AppColor.border.withOpacity(0.2)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header: Icon + Status Badge
+              Row(
+                spacing: 10,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(8.w),
+                    decoration: BoxDecoration(
+                      color: AppColor.background,
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Icon(
+                      Icons.folder_outlined,
+                      size: 20.sp,
+                      color: AppColor.textSecondary,
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        project.name,
+                        style: AppFonts.regular.copyWith(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColor.textPrimary,
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 2.h),
+                      Row(
+                        children: [
+                          Icon(Icons.tag,
+                              size: 14.sp, color: AppColor.textMuted),
+                          SizedBox(width: 5.w),
+                          Text(
+                            project.code,
+                            style: AppFonts.regular.copyWith(
+                              fontSize: 12.sp,
+                              color: AppColor.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6.w,
+                          height: 6.h,
+                          decoration: BoxDecoration(
+                            color: statusColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        SizedBox(width: 5.w),
+                        Text(
+                          project.status,
+                          style: AppFonts.regular.copyWith(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w600,
+                            color: statusColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 12.h),
+
+              // Location
+              Row(
+                children: [
+                  Icon(Icons.location_on_outlined,
+                      size: 14.sp, color: AppColor.textMuted),
+                  SizedBox(width: 5.w),
+                  Expanded(
+                    child: Text(
+                      project.locationName,
+                      style: AppFonts.regular.copyWith(
+                        fontSize: 12.sp,
+                        color: AppColor.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 12.h),
+
+              // Divider
+              Container(
+                height: 1,
+                color: AppColor.border.withOpacity(0.2),
+              ),
+
+              SizedBox(height: 12.h),
+
+              // Date Range
+              Row(
+                children: [
+                  // Start Date
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(Icons.calendar_today_outlined,
+                            size: 13.sp, color: AppColor.accent),
+                        SizedBox(width: 5.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Start',
+                                style: AppFonts.regular.copyWith(
+                                  fontSize: 10.sp,
+                                  color: AppColor.textMuted,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 2.h),
+                              Text(
+                                _formatDate(project.startDate),
+                                style: AppFonts.regular.copyWith(
+                                  fontSize: 12.sp,
+                                  color: AppColor.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Separator
+                  Container(
+                    width: 1,
+                    height: 30.h,
+                    color: AppColor.border.withOpacity(0.2),
+                    margin: EdgeInsets.symmetric(horizontal: 8.w),
+                  ),
+
+                  // End Date
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(Icons.event_outlined,
+                            size: 13.sp, color: AppColor.error),
+                        SizedBox(width: 5.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'End',
+                                style: AppFonts.regular.copyWith(
+                                  fontSize: 10.sp,
+                                  color: AppColor.textMuted,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 2.h),
+                              Text(
+                                _formatDate(project.endDate),
+                                style: AppFonts.regular.copyWith(
+                                  fontSize: 12.sp,
+                                  color: AppColor.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+// Helper method to format date
+  String _formatDate(DateTime date) {
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return const Color(0xFF10B981); // Green
+      case 'completed':
+        return const Color(0xFF3B82F6); // Blue
+      case 'planning':
+        return const Color(0xFFF59E0B); // Orange
+      case 'backlog':
+        return const Color(0xFFEF4444); // Red
+      default:
+        return AppColor.textSecondary;
+    }
+  }
+/*
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'active':
@@ -616,6 +744,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         return AppColor.primary;
     }
   }
+  */
 }
 
 class _InfoChip extends StatelessWidget {
@@ -819,4 +948,24 @@ class _CompactSurveyCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class ProjectCardData {
+  String id;
+  String name;
+  String code;
+  String locationName;
+  DateTime startDate;
+  DateTime endDate;
+  String status;
+
+  ProjectCardData({
+    required this.id,
+    required this.name,
+    required this.code,
+    required this.locationName,
+    required this.startDate,
+    required this.endDate,
+    required this.status,
+  });
 }
