@@ -124,7 +124,7 @@ class TreeMarkerBottomSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  treeData.speciesName?? 'Unknown',
+                  treeData.speciesName ?? 'Unknown',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -133,7 +133,7 @@ class TreeMarkerBottomSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  treeData.speciesNameMarathi?? '',
+                  treeData.speciesNameMarathi ?? '',
                   style: TextStyle(
                     fontSize: 16,
                     color: AppColor.textSecondary,
@@ -180,7 +180,8 @@ class TreeMarkerBottomSheet extends StatelessWidget {
                   child: _buildMeasurementCard(
                     icon: Icons.circle_outlined,
                     label: 'Diameter',
-                    value: '${treeData.diameterCm.toStringAsFixed(1) ?? 'N/A'} cm',
+                    value:
+                        '${treeData.diameterCm.toStringAsFixed(1) ?? 'N/A'} cm',
                     color: AppColor.secondary,
                   ),
                 ),
@@ -226,11 +227,9 @@ class TreeMarkerBottomSheet extends StatelessWidget {
                 // Delete Button
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      onDelete();
-                    },
-                    icon: Icon(Icons.delete_outline,color: AppColor.error, size: 20),
+                    onPressed: onDelete,
+                    icon: Icon(Icons.delete_outline,
+                        color: AppColor.error, size: 20),
                     label: Text('Delete'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColor.error,
@@ -247,11 +246,9 @@ class TreeMarkerBottomSheet extends StatelessWidget {
                 Expanded(
                   flex: 2,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      onNavigate();
-                    },
-                    icon: Icon(Icons.navigation,color: AppColor.white, size: 20),
+                    onPressed: onNavigate,
+                    icon:
+                        Icon(Icons.navigation, color: AppColor.white, size: 20),
                     label: Text('Navigate to Tree'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColor.primary,
@@ -380,7 +377,6 @@ class TreeMarkerBottomSheet extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _buildDetailRow({
     required IconData icon,

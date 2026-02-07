@@ -9,12 +9,13 @@ import '../../features/survey/models/tree_species_response_model.dart';
 import '../../features/survey/models/tree_survey_list_model.dart';
 import '../models/response.mode.dart';
 import '../models/success_response_model.dart';
-class TreeRepository {
 
+class TreeRepository {
   final ApiService _api = ApiService();
 
   /// Fetch tree species list
-  Future<ApiResult<TreeSpeciesResponseModel, ResponseModel>> fetchTreeSpecies() async {
+  Future<ApiResult<TreeSpeciesResponseModel, ResponseModel>>
+      fetchTreeSpecies() async {
     final result = await _api.get<TreeSpeciesResponseModel>(
       path: ApiEndpoints.treeSpecies,
       parser: treeSpeciesResponseModelFromJson,
@@ -70,4 +71,22 @@ class TreeRepository {
 
     return result;
   }
+
+  //Delete a tree survey entry
+  Future<ApiResult<SuccessResponseModel, ResponseModel>> deleteTreeSurvey({
+    required String surveyId,
+  }) async {
+    final url = "${ApiEndpoints.treeSurvey}$surveyId/";
+
+    final result = await _api.delete<SuccessResponseModel>(
+      path: url,
+      parser: successResponseModelFromJson,
+    );
+    debugLog(
+      "Delete Tree Survey Status: ${result.status}",
+      name: "TreeRepository",
+    );
+    return result;
+  }
+
 }

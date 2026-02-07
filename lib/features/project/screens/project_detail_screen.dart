@@ -1,19 +1,16 @@
-
 import 'package:auto_route/auto_route.dart';
 import 'package:fieldsync/common/models/response.mode.dart';
 import 'package:fieldsync/core/config/route/app_route.dart';
-import 'package:fieldsync/features/maps/screens/map_screen.dart';
 import 'package:fieldsync/features/project/bloc/project_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../common/bloc/api_event.dart';
 import '../../../common/bloc/api_state.dart';
 import '../../../common/repository/project_repository.dart';
 import '../../../common/widgets/common_gradient_button.dart';
 import '../../../core/config/themes/app_color.dart';
-
-
 // 👇 Your models & bloc
 
 import '../models/project_dashboard_response_model.dart';
@@ -23,7 +20,8 @@ class ProjectDetailScreen extends StatefulWidget {
   static const route = '/project-detail';
   final String projectId;
 
-  const ProjectDetailScreen({Key? key, required this.projectId}) : super(key: key);
+  const ProjectDetailScreen({Key? key, required this.projectId})
+      : super(key: key);
 
   @override
   State<ProjectDetailScreen> createState() => _ProjectDetailScreenState();
@@ -50,6 +48,69 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   String _formatDateShort(DateTime? date) {
     if (date == null) return '–';
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String count,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      width: 0.44.sw,
+      decoration: BoxDecoration(
+        color: AppColor.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColor.border.withOpacity(0.5),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  count,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColor.textPrimary,
+                    letterSpacing: -0.5,
+                    height: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColor.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -130,10 +191,11 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             ApiState<ProjectDashboardResponse, ResponseModel>>(
           builder: (context, state) {
             if (state is ApiLoading) {
-              return Center(child: CircularProgressIndicator(color: AppColor.primary));
+              return Center(
+                  child: CircularProgressIndicator(color: AppColor.primary));
             }
 
-            if (state is ApiFailure<ProjectDashboardResponse,ResponseModel>) {
+            if (state is ApiFailure<ProjectDashboardResponse, ResponseModel>) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -143,22 +205,26 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     Text(
                       state.error.message ?? 'Failed to load project data',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: AppColor.textPrimary, fontSize: 16),
+                      style:
+                          TextStyle(color: AppColor.textPrimary, fontSize: 16),
                     ),
                     SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: () {
-                        _projectDashboardBloc.add(ApiFetch(projectId: widget.projectId));
+                        _projectDashboardBloc
+                            .add(ApiFetch(projectId: widget.projectId));
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColor.primary),
-                      child: Text('Retry', style: TextStyle(color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColor.primary),
+                      child:
+                          Text('Retry', style: TextStyle(color: Colors.white)),
                     ),
                   ],
                 ),
               );
             }
 
-            if (state is ApiSuccess<ProjectDashboardResponse,ResponseModel>) {
+            if (state is ApiSuccess<ProjectDashboardResponse, ResponseModel>) {
               final data = state.data.data;
               final overview = data.overview;
               final stats = data.stats;
@@ -172,7 +238,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     SizedBox(height: 10),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,7 +266,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     // Compact Project Overview
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
                       child: Row(
                         children: [
                           Expanded(
@@ -213,12 +281,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                             child: _InfoChip(
                               icon: Icons.calendar_today_outlined,
                               label:
-                              '${_formatDateShort(overview.startDate)} - ${_formatDateShort(overview.endDate)}',
+                                  '${_formatDateShort(overview.startDate)} - ${_formatDateShort(overview.endDate)}',
                             ),
                           ),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               color: _getStatusColor(overview.status),
                               borderRadius: BorderRadius.circular(8),
@@ -243,6 +312,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 15,
                         children: [
                           const Text(
                             'Statistics',
@@ -252,82 +322,24 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: AppColor.cardBackground,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColor.border),
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _CompactStat(
-                                        icon: Icons.people_outline,
-                                        label: 'Team',
-                                        value: stats.teamSize.toString(),
-                                        color: AppColor.secondary,
-                                      ),
-                                    ),
-                                    Container(width: 1, height: 40, color: AppColor.divider),
-                                    Expanded(
-                                      child: _CompactStat(
-                                        icon: Icons.assignment_outlined,
-                                        label: 'Surveys',
-                                        value: stats.totalSurveys.toString(),
-                                        color: AppColor.primary,
-                                      ),
-                                    ),
-                                    Container(width: 1, height: 40, color: AppColor.divider),
-                                    Expanded(
-                                      child: _CompactStat(
-                                        icon: Icons.check_circle_outline,
-                                        label: 'Done',
-                                        value: stats.completedSurveys.toString(),
-                                        color: AppColor.success,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Divider(color: AppColor.divider, height: 1),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _CompactStat(
-                                        icon: Icons.park_outlined,
-                                        label: 'Trees',
-                                        value: stats.totalTrees.toString(),
-                                        color: AppColor.secondaryDark,
-                                      ),
-                                    ),
-                                    Container(width: 1, height: 40, color: AppColor.divider),
-                                    Expanded(
-                                      child: _CompactStat(
-                                        icon: Icons.nature_outlined,
-                                        label: 'Species',
-                                        value: stats.speciesDiversity.toString(),
-                                        color: AppColor.accent,
-                                      ),
-                                    ),
-                                    Container(width: 1, height: 40, color: AppColor.divider),
-                                    Expanded(
-                                      child: _CompactStat(
-                                        icon: Icons.landscape_outlined,
-                                        label: 'Area (ha)',
-                                        value: stats.areaHectares.toStringAsFixed(0),
-                                        color: AppColor.primaryLight,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildStatCard(
+                                icon: Icons.park_outlined,
+                                count: stats.totalSurveys.toString(),
+                                label: 'Total Trees',
+                                color: AppColor.primary,
+                              ),
+                              _buildStatCard(
+                                icon: Icons.eco_outlined,
+                                count: stats.speciesDiversity.toString(),
+                                label: 'Total Species',
+                                color: AppColor.primary,
+                              ),
+                            ],
                           ),
+                          const SizedBox(height: 10),
                         ],
                       ),
                     ),
@@ -416,7 +428,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                       ),
 
                     const SizedBox(height: 18),
-
+/*
                     // Progress Overview Card
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -442,7 +454,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                             child: Column(
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Text(
                                       'Survey Completion',
@@ -467,16 +480,20 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                   child: LinearProgressIndicator(
                                     value: stats.totalSurveys > 0
-                                        ? stats.completedSurveys / stats.totalSurveys
+                                        ? stats.completedSurveys /
+                                            stats.totalSurveys
                                         : 0.0,
                                     backgroundColor: AppColor.divider,
-                                    valueColor: const AlwaysStoppedAnimation<Color>(AppColor.secondary),
+                                    valueColor:
+                                        const AlwaysStoppedAnimation<Color>(
+                                            AppColor.secondary),
                                     minHeight: 8,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       stats.totalSurveys > 0
@@ -502,7 +519,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                         ],
                       ),
                     ),
-
+*/
                     const SizedBox(height: 18),
 
                     // Recent Surveys
@@ -531,18 +548,22 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                               child: const Center(
                                 child: Column(
                                   children: [
-                                    Icon(Icons.assignment_outlined, color: AppColor.textMuted, size: 36),
+                                    Icon(Icons.assignment_outlined,
+                                        color: AppColor.textMuted, size: 36),
                                     SizedBox(height: 8),
                                     Text(
                                       'No surveys yet',
-                                      style: TextStyle(color: AppColor.textMuted, fontSize: 14),
+                                      style: TextStyle(
+                                          color: AppColor.textMuted,
+                                          fontSize: 14),
                                     ),
                                   ],
                                 ),
                               ),
                             )
                           else
-                            ...recentSurveys.map((survey) => _CompactSurveyCard(survey: survey as Map<String, dynamic>)),
+                            ...recentSurveys.map((survey) => _CompactSurveyCard(
+                                survey: survey as Map<String, dynamic>)),
                         ],
                       ),
                     ),
@@ -557,25 +578,25 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           },
         ),
       ),
-bottomNavigationBar: Container(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-    decoration: BoxDecoration(
-      color: Colors.transparent,
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 10,
-          offset: const Offset(0, -2),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
         ),
-      ],
-    ),
-    child: SafeArea(
-      child: CommonGradientButton(
-  text: 'Continue',
-  onTap: onContinue,
-),
-    ),
-  ),
+        child: SafeArea(
+          child: CommonGradientButton(
+            text: 'Start Survey',
+            onTap: onContinue,
+          ),
+        ),
+      ),
     );
   }
 
@@ -752,7 +773,8 @@ class _CompactSurveyCard extends StatelessWidget {
               color: AppColor.secondaryLight.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.park, color: AppColor.secondaryDark, size: 20),
+            child:
+                const Icon(Icons.park, color: AppColor.secondaryDark, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -760,7 +782,7 @@ class _CompactSurveyCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  survey['tree_species'] ?? 'Unknown Species',
+                  survey['species__common_name'] ?? 'Unknown Species',
                   style: const TextStyle(
                     color: AppColor.textPrimary,
                     fontSize: 14,
@@ -769,7 +791,7 @@ class _CompactSurveyCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${survey['surveyed_by'] ?? 'Unknown'} • ${survey['date'] ?? 'No date'}',
+                  '${survey['created_by__profile__first_name'] ?? 'Unknown'} • ${survey['created_at'] ?? 'No date'}',
                   style: const TextStyle(
                     color: AppColor.textMuted,
                     fontSize: 11,
@@ -785,7 +807,7 @@ class _CompactSurveyCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
-              survey['health'] ?? 'N/A',
+              survey['health_status'] ?? 'N/A',
               style: const TextStyle(
                 color: AppColor.success,
                 fontSize: 11,
@@ -798,4 +820,3 @@ class _CompactSurveyCard extends StatelessWidget {
     );
   }
 }
-

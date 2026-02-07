@@ -11,7 +11,7 @@ import 'network_status.dart';
 class ApiService {
   final ApiClient _client = ApiClient();
 
-    /// ---------- MULTIPART ----------
+  /// ---------- MULTIPART ----------
   Future<ApiResult<T, ResponseModel>> upload<T>({
     required String path,
     required Map<String, dynamic> fields,
@@ -52,7 +52,8 @@ class ApiService {
     bool skipAuth = false,
   }) async {
     try {
-      final response = await _client.post(path, body: body, isForm: isForm, skipAuth: skipAuth);
+      final response = await _client.post(path,
+          body: body, isForm: isForm, skipAuth: skipAuth);
       return _mapResponse<T>(response, parser);
     } on DioException catch (e) {
       return _mapDioError<T>(e, parser);
@@ -73,13 +74,40 @@ class ApiService {
     bool skipAuth = false,
   }) async {
     try {
-      final response = await _client.get(path, query: query, skipAuth: skipAuth);
+      final response =
+          await _client.get(path, query: query, skipAuth: skipAuth);
       return _mapResponse<T>(response, parser);
     } on DioException catch (e) {
       return _mapDioError<T>(e, parser);
     } catch (e) {
       return ApiResult.error(
         ResponseModel(message: e.toString()),
+        ApiStatus.failed,
+      );
+    }
+  }
+
+  ///---- detete ----
+  Future<ApiResult<T, ResponseModel>> delete<T>({
+    required String path,
+    bool skipAuth = false,
+    required T Function(String) parser,
+  }) async {
+    try {
+      final response = await _client.delete(
+        path,
+        skipAuth: skipAuth,
+      );
+
+      return _mapResponse<T>(response, parser);
+    } on DioException catch (e) {
+      return _mapDioError<T>(e, parser);
+    } catch (e) {
+      return ApiResult.error(
+        ResponseModel(
+          status: 'failed',
+          message: e.toString(),
+        ),
         ApiStatus.failed,
       );
     }
@@ -118,25 +146,26 @@ class ApiService {
 
     try {
       if (e.response?.data != null) {
-      debugLog('ApiService._mapDioError: Error response data: ${e.response?.data}');
-      // ✅ ALWAYS return ResponseModel for HTTP errors (400, 401, 500)
-      return ApiResult.error(
-        ResponseModel(
-          status: e.response?.data['status'] ?? 'failed',
-          message: e.response?.data['message'] ?? 'Unknown error',
-          data: e.response?.data['data'] ?? '',
-        ),
-        ApiStatus.failed  // Cast to T (works because ResponseModel is your base)
-      );
+        debugLog(
+            'ApiService._mapDioError: Error response data: ${e.response?.data}');
+        // ✅ ALWAYS return ResponseModel for HTTP errors (400, 401, 500)
+        return ApiResult.error(
+            ResponseModel(
+              status: e.response?.data['status'] ?? 'failed',
+              message: e.response?.data['message'] ?? 'Unknown error',
+              data: e.response?.data['data'] ?? '',
+            ),
+            ApiStatus
+                .failed // Cast to T (works because ResponseModel is your base)
+            );
       } else {
         return ApiResult.error(
-          ResponseModel(
-            status: 'failed',
-            message: BaseNetwork.FailedMessage,
-            data: e.message,
-          ),
-          ApiStatus.failed
-        );
+            ResponseModel(
+              status: 'failed',
+              message: BaseNetwork.FailedMessage,
+              data: e.message,
+            ),
+            ApiStatus.failed);
       }
     } catch (_) {
       return ApiResult.error(

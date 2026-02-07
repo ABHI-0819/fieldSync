@@ -1,11 +1,11 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:fieldsync/core/utils/logger.dart';
-import 'package:fieldsync/features/project/screens/project_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shimmer/shimmer.dart';
+
 import '../../../common/bloc/api_event.dart';
 import '../../../common/bloc/api_state.dart';
 import '../../../common/models/response.mode.dart';
@@ -13,7 +13,6 @@ import '../../../common/repository/project_repository.dart';
 import '../../../core/config/route/app_route.dart';
 import '../../../core/config/themes/app_color.dart';
 import '../../../core/config/themes/app_fonts.dart';
-import '../../maps/screens/map_screen.dart';
 import '../bloc/project_bloc.dart';
 import '../models/project_list_respone_model.dart';
 

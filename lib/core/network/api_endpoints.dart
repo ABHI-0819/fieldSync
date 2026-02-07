@@ -25,6 +25,7 @@ class ApiEndpoints {
   // Tree
   static const String treeSpecies = 'api/v1/species/tree-species/';
   static const String treeSurvey = 'api/v1/surveys/tree-surveys/';
+  static const String dashboard = 'api/v1/dashboard/overall/';
 
   // Assets
   static const String imageBaseUrl =

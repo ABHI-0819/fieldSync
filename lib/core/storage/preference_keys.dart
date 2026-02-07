@@ -28,7 +28,9 @@ class Keys {
   static const String username = 'username';
   static const String password = 'password';
   static const String deviceId = 'deviceId';
-  static const String name = 'name'; // If applicable
+  static const String name = 'name';
+  static const String fullName = 'full_name';
+   // If applicable
 
   // Services
   static const plantationServiceId = "plantation_service_id";

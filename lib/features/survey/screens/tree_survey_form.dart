@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:auto_route/auto_route.dart';
 import 'package:fieldsync/features/authentication/screens/login_screen.dart';
+import 'package:fieldsync/features/maps/screens/map_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -35,7 +36,6 @@ class TreeSpecies {
   });
 }
 
-
 // Main Form Screen
 @RoutePage()
 class TreeSurveyFormScreen extends StatefulWidget {
@@ -64,7 +64,8 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
 
   // Controllers for additional fields
   final TextEditingController _ownershipController = TextEditingController();
-  final TextEditingController _canopyDiameterController = TextEditingController();
+  final TextEditingController _canopyDiameterController =
+      TextEditingController();
   final TextEditingController _estimatedAgeController = TextEditingController();
   final TextEditingController _soilTypeController = TextEditingController();
   final TextEditingController _threatsController = TextEditingController();
@@ -303,177 +304,177 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
         ),
       ),
       body: BlocProvider(
-  create: (context) => _treeSurveyBloc,
-  child:BlocListener<TreeSurveyBloc, ApiState<SuccessResponseModel, ResponseModel>>(
-    listener: (context, state) {
-      if (state is ApiLoading) {
-        EasyLoading.show(status: 'Submitting...');
-      } else if (state is ApiSuccess<SuccessResponseModel, ResponseModel>) {
-        EasyLoading.dismiss();
-        IconSnackBar.show(
-          context,
-          snackBarType: SnackBarType.success,
-          label: state.data.message,
-          backgroundColor: Colors.green,
-          iconColor: Colors.white,
-        );
-        Navigator.pop(context); // success
-      } else if (state is ApiFailure<SuccessResponseModel, ResponseModel>) {
-        EasyLoading.dismiss();
-        IconSnackBar.show(
-          context,
-          snackBarType: SnackBarType.alert,
-          label: state.error.data.toString(),
-          backgroundColor: Colors.red,
-          iconColor: Colors.white,
-        );
-      } else if (state is TokenExpired) {
-        EasyLoading.dismiss();
-        context.router.replaceAll([const LoginRoute()]);
-        // AppRoute.pushReplacement(context, LoginScreen.route, arguments: {});
-      }
-    },
-  child: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(16.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Required Fields Section
-                    _buildSectionHeader('Basic Information', isRequired: true),
-                    SizedBox(height: 12.h),
+        create: (context) => _treeSurveyBloc,
+        child: BlocListener<TreeSurveyBloc,
+            ApiState<SuccessResponseModel, ResponseModel>>(
+          listener: (context, state) {
+            if (state is ApiLoading) {
+              EasyLoading.show(status: 'Submitting...');
+            } else if (state
+                is ApiSuccess<SuccessResponseModel, ResponseModel>) {
+              EasyLoading.dismiss();
+              IconSnackBar.show(
+                context,
+                snackBarType: SnackBarType.success,
+                label: state.data.message,
+                backgroundColor: Colors.green,
+                iconColor: Colors.white,
+              );
+               context.router.pop(widget.projectId);
+              // success
+            } else if (state
+                is ApiFailure<SuccessResponseModel, ResponseModel>) {
+              EasyLoading.dismiss();
+              IconSnackBar.show(
+                context,
+                snackBarType: SnackBarType.alert,
+                label: state.error.data.toString(),
+                backgroundColor: Colors.red,
+                iconColor: Colors.white,
+              );
+            } else if (state is TokenExpired) {
+              EasyLoading.dismiss();
+              context.router.replaceAll([const LoginRoute()]);
+              // AppRoute.pushReplacement(context, LoginScreen.route, arguments: {});
+            }
+          },
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(16.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Required Fields Section
+                        _buildSectionHeader('Basic Information',
+                            isRequired: true),
+                        SizedBox(height: 12.h),
 
-                    // Species Selection
-                    _buildSpeciesSelector(),
-                    SizedBox(height: 16.h),
+                        // Species Selection
+                        _buildSpeciesSelector(),
+                        SizedBox(height: 16.h),
 
-                    // Location
-                    _buildLocationField(),
-                    SizedBox(height: 16.h),
+                        // Location
+                        _buildLocationField(),
+                        SizedBox(height: 16.h),
 
-                    // Height
-                    _buildTextField(
-                      controller: _heightController,
-                      label: 'Height (meters)',
-                      hint: 'e.g., 15.5',
-                      isRequired: true,
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
-                      suffixText: 'm',
+                        // Height
+                        _buildTextField(
+                          controller: _heightController,
+                          label: 'Height (meters)',
+                          hint: 'e.g., 15.5',
+                          isRequired: true,
+                          keyboardType:
+                              TextInputType.numberWithOptions(decimal: true),
+                          suffixText: 'm',
+                        ),
+                        SizedBox(height: 16.h),
+
+                        // Girth
+                        _buildTextField(
+                          controller: _girthController,
+                          label: 'Girth at Breast Height (meters)',
+                          hint: 'e.g., 1.2',
+                          isRequired: true,
+                          keyboardType:
+                              TextInputType.numberWithOptions(decimal: true),
+                          suffixText: 'm',
+                        ),
+                        SizedBox(height: 16.h),
+
+                        // Health Status
+                        _buildHealthStatusSelector(),
+                        SizedBox(height: 16.h),
+
+                        // Images
+                        _buildImageSelector(),
+                        SizedBox(height: 24.h),
+
+                        // Additional Details Toggle Button
+                        _buildAdditionalDetailsButton(),
+                        SizedBox(height: 16.h),
+
+                        // Additional Details Section (Collapsible)
+                        if (_showAdditionalDetails) ...[
+                          _buildSectionHeader('Additional Details',
+                              isRequired: false),
+                          SizedBox(height: 12.h),
+                          _buildTextField(
+                            controller: _ownershipController,
+                            label: 'Ownership',
+                            hint: 'e.g., Public, Private',
+                            isRequired: false,
+                          ),
+                          SizedBox(height: 16.h),
+                          _buildTextField(
+                            controller: _canopyDiameterController,
+                            label: 'Canopy Diameter (meters)',
+                            hint: 'e.g., 8.5',
+                            isRequired: false,
+                            keyboardType:
+                                TextInputType.numberWithOptions(decimal: true),
+                            suffixText: 'm',
+                          ),
+                          SizedBox(height: 16.h),
+                          _buildTextField(
+                            controller: _estimatedAgeController,
+                            label: 'Estimated Age (years)',
+                            hint: 'e.g., 50',
+                            isRequired: false,
+                            keyboardType: TextInputType.number,
+                            suffixText: 'yrs',
+                          ),
+                          SizedBox(height: 16.h),
+                          _buildTextField(
+                            controller: _soilTypeController,
+                            label: 'Soil Type',
+                            hint: 'e.g., Loamy, Clay',
+                            isRequired: false,
+                          ),
+                          SizedBox(height: 16.h),
+                          _buildSiteQualitySelector(),
+                          SizedBox(height: 16.h),
+                          _buildTextField(
+                            controller: _threatsController,
+                            label: 'Threats',
+                            hint: 'e.g., Pest infestation, Construction',
+                            isRequired: false,
+                            maxLines: 2,
+                          ),
+                          SizedBox(height: 16.h),
+                          _buildDamageSeveritySelector(),
+                          SizedBox(height: 16.h),
+                          _buildTextField(
+                            controller: _remarkController,
+                            label: 'Remarks',
+                            hint: 'Any additional notes...',
+                            isRequired: false,
+                            maxLines: 3,
+                          ),
+                          SizedBox(height: 16.h),
+                          _buildTextField(
+                            controller: _fieldOfficerController,
+                            label: 'Field Officer',
+                            hint: 'Officer name',
+                            isRequired: false,
+                          ),
+                          SizedBox(height: 24.h),
+                        ],
+                      ],
                     ),
-                    SizedBox(height: 16.h),
-
-                    // Girth
-                    _buildTextField(
-                      controller: _girthController,
-                      label: 'Girth at Breast Height (meters)',
-                      hint: 'e.g., 1.2',
-                      isRequired: true,
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
-                      suffixText: 'm',
-                    ),
-                    SizedBox(height: 16.h),
-
-                    // Health Status
-                    _buildHealthStatusSelector(),
-                    SizedBox(height: 16.h),
-
-                    // Images
-                    _buildImageSelector(),
-                    SizedBox(height: 24.h),
-
-                    // Additional Details Toggle Button
-                    _buildAdditionalDetailsButton(),
-                    SizedBox(height: 16.h),
-
-                    // Additional Details Section (Collapsible)
-                    if (_showAdditionalDetails) ...[
-                      _buildSectionHeader('Additional Details', isRequired: false),
-                      SizedBox(height: 12.h),
-
-                      _buildTextField(
-                        controller: _ownershipController,
-                        label: 'Ownership',
-                        hint: 'e.g., Public, Private',
-                        isRequired: false,
-                      ),
-                      SizedBox(height: 16.h),
-
-                      _buildTextField(
-                        controller: _canopyDiameterController,
-                        label: 'Canopy Diameter (meters)',
-                        hint: 'e.g., 8.5',
-                        isRequired: false,
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
-                        suffixText: 'm',
-                      ),
-                      SizedBox(height: 16.h),
-
-                      _buildTextField(
-                        controller: _estimatedAgeController,
-                        label: 'Estimated Age (years)',
-                        hint: 'e.g., 50',
-                        isRequired: false,
-                        keyboardType: TextInputType.number,
-                        suffixText: 'yrs',
-                      ),
-                      SizedBox(height: 16.h),
-
-                      _buildTextField(
-                        controller: _soilTypeController,
-                        label: 'Soil Type',
-                        hint: 'e.g., Loamy, Clay',
-                        isRequired: false,
-                      ),
-                      SizedBox(height: 16.h),
-
-                      _buildSiteQualitySelector(),
-                      SizedBox(height: 16.h),
-
-                      _buildTextField(
-                        controller: _threatsController,
-                        label: 'Threats',
-                        hint: 'e.g., Pest infestation, Construction',
-                        isRequired: false,
-                        maxLines: 2,
-                      ),
-                      SizedBox(height: 16.h),
-
-                      _buildDamageSeveritySelector(),
-                      SizedBox(height: 16.h),
-
-                      _buildTextField(
-                        controller: _remarkController,
-                        label: 'Remarks',
-                        hint: 'Any additional notes...',
-                        isRequired: false,
-                        maxLines: 3,
-                      ),
-                      SizedBox(height: 16.h),
-
-                      _buildTextField(
-                        controller: _fieldOfficerController,
-                        label: 'Field Officer',
-                        hint: 'Officer name',
-                        isRequired: false,
-                      ),
-                      SizedBox(height: 24.h),
-                    ],
-                  ],
+                  ),
                 ),
-              ),
-            ),
 
-            // Submit Button
-            _buildSubmitButton(),
-          ],
+                // Submit Button
+                _buildSubmitButton(),
+              ],
+            ),
+          ),
         ),
       ),
-),
-),
     );
   }
 
@@ -586,7 +587,8 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
               borderRadius: BorderRadius.circular(12.r),
               borderSide: BorderSide(color: AppColor.error),
             ),
-            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+            contentPadding:
+                EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
           ),
           validator: (value) {
             if (isRequired && (value == null || value.isEmpty)) {
@@ -637,38 +639,39 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
             ),
             child: Row(
               children: [
-                Icon(Icons.park_outlined, color: AppColor.secondary, size: 22.sp),
+                Icon(Icons.park_outlined,
+                    color: AppColor.secondary, size: 22.sp),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: _selectedSpecies == null
                       ? Text(
-                    'Search and select species',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: AppColor.textMuted,
-                    ),
-                  )
+                          'Search and select species',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: AppColor.textMuted,
+                          ),
+                        )
                       : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _selectedSpecies!.name,
-                        style: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w600,
-                          color: AppColor.textPrimary,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _selectedSpecies!.name,
+                              style: TextStyle(
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w600,
+                                color: AppColor.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              _selectedSpecies!.scientificName,
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: AppColor.textSecondary,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      Text(
-                        _selectedSpecies!.scientificName,
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: AppColor.textSecondary,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
                 Icon(Icons.search, color: AppColor.primary, size: 20.sp),
               ],
@@ -714,7 +717,8 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
           ),
           child: Row(
             children: [
-              Icon(Icons.location_on_outlined, color: AppColor.accent, size: 20.sp),
+              Icon(Icons.location_on_outlined,
+                  color: AppColor.accent, size: 20.sp),
               SizedBox(width: 12.w),
               Expanded(
                 child: Column(
@@ -797,7 +801,9 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
                       : AppColor.cardBackground,
                   borderRadius: BorderRadius.circular(20.r),
                   border: Border.all(
-                    color: isSelected ? (option['color'] as Color) : AppColor.border,
+                    color: isSelected
+                        ? (option['color'] as Color)
+                        : AppColor.border,
                     width: isSelected ? 2 : 1,
                   ),
                 ),
@@ -817,8 +823,11 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
                       option['label'] as String,
                       style: TextStyle(
                         fontSize: 13.sp,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: isSelected ? (option['color'] as Color) : AppColor.textPrimary,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: isSelected
+                            ? (option['color'] as Color)
+                            : AppColor.textPrimary,
                       ),
                     ),
                   ],
@@ -861,7 +870,9 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColor.primary.withOpacity(0.1) : AppColor.cardBackground,
+                  color: isSelected
+                      ? AppColor.primary.withOpacity(0.1)
+                      : AppColor.cardBackground,
                   borderRadius: BorderRadius.circular(20.r),
                   border: Border.all(
                     color: isSelected ? AppColor.primary : AppColor.border,
@@ -935,7 +946,9 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
                 decoration: BoxDecoration(
-                  color: isSelected ? chipColor.withOpacity(0.1) : AppColor.cardBackground,
+                  color: isSelected
+                      ? chipColor.withOpacity(0.1)
+                      : AppColor.cardBackground,
                   borderRadius: BorderRadius.circular(20.r),
                   border: Border.all(
                     color: isSelected ? chipColor : AppColor.border,
@@ -984,10 +997,8 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
           ],
         ),
         SizedBox(height: 8.h),
-        if (_selectedImages.isEmpty)
-          _buildImagePlaceholder(),
-        if (_selectedImages.isNotEmpty)
-          _buildImagePreviewGrid(),
+        if (_selectedImages.isEmpty) _buildImagePlaceholder(),
+        if (_selectedImages.isNotEmpty) _buildImagePreviewGrid(),
       ],
     );
   }
@@ -1065,7 +1076,8 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           ListTile(
-                            leading: Icon(Icons.camera_alt, color: AppColor.primary),
+                            leading:
+                                Icon(Icons.camera_alt, color: AppColor.primary),
                             title: Text('Take Photo'),
                             onTap: () {
                               Navigator.pop(context);
@@ -1073,7 +1085,8 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
                             },
                           ),
                           ListTile(
-                            leading: Icon(Icons.image, color: AppColor.secondary),
+                            leading:
+                                Icon(Icons.image, color: AppColor.secondary),
                             title: Text('Choose from Gallery'),
                             onTap: () {
                               Navigator.pop(context);
@@ -1152,13 +1165,17 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              _showAdditionalDetails ? Icons.remove_circle_outline : Icons.add_circle_outline,
+              _showAdditionalDetails
+                  ? Icons.remove_circle_outline
+                  : Icons.add_circle_outline,
               color: AppColor.primary,
               size: 22.sp,
             ),
             SizedBox(width: 8.w),
             Text(
-              _showAdditionalDetails ? 'Hide Additional Details' : 'Add Additional Details',
+              _showAdditionalDetails
+                  ? 'Hide Additional Details'
+                  : 'Add Additional Details',
               style: TextStyle(
                 fontSize: 15.sp,
                 fontWeight: FontWeight.w600,
@@ -2461,8 +2478,6 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
 
  */
 
-
-
 class SpeciesSearchBottomSheet extends StatefulWidget {
   final Function(TreeSpecies) onSpeciesSelected;
 
@@ -2472,7 +2487,8 @@ class SpeciesSearchBottomSheet extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<SpeciesSearchBottomSheet> createState() => _SpeciesSearchBottomSheetState();
+  State<SpeciesSearchBottomSheet> createState() =>
+      _SpeciesSearchBottomSheetState();
 }
 
 class _SpeciesSearchBottomSheetState extends State<SpeciesSearchBottomSheet> {
@@ -2524,11 +2540,13 @@ class _SpeciesSearchBottomSheetState extends State<SpeciesSearchBottomSheet> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _speciesBloc,
-      child: BlocConsumer<TreeSpeciesBloc, ApiState<TreeSpeciesResponseModel, ResponseModel>>(
+      child: BlocConsumer<TreeSpeciesBloc,
+          ApiState<TreeSpeciesResponseModel, ResponseModel>>(
         listener: (context, state) {
           if (state is ApiLoading) {
             EasyLoading.show(status: 'Loading species...');
-          } else if (state is ApiSuccess<TreeSpeciesResponseModel, ResponseModel>) {
+          } else if (state
+              is ApiSuccess<TreeSpeciesResponseModel, ResponseModel>) {
             EasyLoading.dismiss();
             final speciesList = state.data.data ?? [];
             final uiSpecies = speciesList.map(_mapToUiModel).toList();
@@ -2536,7 +2554,8 @@ class _SpeciesSearchBottomSheetState extends State<SpeciesSearchBottomSheet> {
               _allSpecies = uiSpecies;
               _filteredSpecies = uiSpecies;
             });
-          } else if (state is ApiFailure<TreeSpeciesResponseModel, ResponseModel>) {
+          } else if (state
+              is ApiFailure<TreeSpeciesResponseModel, ResponseModel>) {
             EasyLoading.dismiss();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.error.data.toString())),
@@ -2579,7 +2598,8 @@ class _SpeciesSearchBottomSheetState extends State<SpeciesSearchBottomSheet> {
                   padding: EdgeInsets.all(16.w),
                   child: Row(
                     children: [
-                      Icon(Icons.park_outlined, color: AppColor.secondary, size: 24.sp),
+                      Icon(Icons.park_outlined,
+                          color: AppColor.secondary, size: 24.sp),
                       SizedBox(width: 12.w),
                       Text(
                         'Select Tree Species',
@@ -2610,15 +2630,17 @@ class _SpeciesSearchBottomSheetState extends State<SpeciesSearchBottomSheet> {
                         fontSize: 14.sp,
                         color: AppColor.textMuted,
                       ),
-                      prefixIcon: Icon(Icons.search, color: AppColor.textMuted, size: 22.sp),
+                      prefixIcon: Icon(Icons.search,
+                          color: AppColor.textMuted, size: 22.sp),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
-                        icon: Icon(Icons.clear, color: AppColor.textMuted, size: 20.sp),
-                        onPressed: () {
-                          _searchController.clear();
-                          _filterSpecies('');
-                        },
-                      )
+                              icon: Icon(Icons.clear,
+                                  color: AppColor.textMuted, size: 20.sp),
+                              onPressed: () {
+                                _searchController.clear();
+                                _filterSpecies('');
+                              },
+                            )
                           : null,
                       filled: true,
                       fillColor: AppColor.cardBackground,
@@ -2632,9 +2654,11 @@ class _SpeciesSearchBottomSheetState extends State<SpeciesSearchBottomSheet> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.r),
-                        borderSide: BorderSide(color: AppColor.primary, width: 2),
+                        borderSide:
+                            BorderSide(color: AppColor.primary, width: 2),
                       ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w, vertical: 12.h),
                     ),
                   ),
                 ),
@@ -2645,13 +2669,16 @@ class _SpeciesSearchBottomSheetState extends State<SpeciesSearchBottomSheet> {
                 Expanded(
                   child: (() {
                     if (state is ApiLoading) {
-                      return Center(child: CircularProgressIndicator(color: AppColor.primary));
+                      return Center(
+                          child: CircularProgressIndicator(
+                              color: AppColor.primary));
                     } else if (state is ApiFailure || state is TokenExpired) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.error_outline, size: 60, color: AppColor.error),
+                            Icon(Icons.error_outline,
+                                size: 60, color: AppColor.error),
                             SizedBox(height: 16),
                             Text(
                               'Failed to load species',
@@ -2700,7 +2727,8 @@ class _SpeciesSearchBottomSheetState extends State<SpeciesSearchBottomSheet> {
                         return ListView.separated(
                           padding: EdgeInsets.symmetric(horizontal: 16.w),
                           itemCount: _filteredSpecies.length,
-                          separatorBuilder: (context, index) => SizedBox(height: 8.h),
+                          separatorBuilder: (context, index) =>
+                              SizedBox(height: 8.h),
                           itemBuilder: (context, index) {
                             final species = _filteredSpecies[index];
                             return InkWell(
@@ -2714,7 +2742,8 @@ class _SpeciesSearchBottomSheetState extends State<SpeciesSearchBottomSheet> {
                                 decoration: BoxDecoration(
                                   color: AppColor.cardBackground,
                                   borderRadius: BorderRadius.circular(12.r),
-                                  border: Border.all(color: AppColor.border.withOpacity(0.5)),
+                                  border: Border.all(
+                                      color: AppColor.border.withOpacity(0.5)),
                                 ),
                                 child: Row(
                                   children: [
@@ -2722,8 +2751,10 @@ class _SpeciesSearchBottomSheetState extends State<SpeciesSearchBottomSheet> {
                                       width: 44.w,
                                       height: 44.h,
                                       decoration: BoxDecoration(
-                                        color: AppColor.secondary.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(10.r),
+                                        color:
+                                            AppColor.secondary.withOpacity(0.1),
+                                        borderRadius:
+                                            BorderRadius.circular(10.r),
                                       ),
                                       child: Icon(
                                         Icons.park_outlined,
@@ -2734,7 +2765,8 @@ class _SpeciesSearchBottomSheetState extends State<SpeciesSearchBottomSheet> {
                                     SizedBox(width: 12.w),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             species.name,

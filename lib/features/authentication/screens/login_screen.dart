@@ -1,4 +1,3 @@
-
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,7 +32,8 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with TickerProviderStateMixin {
   late AuthBloc _authBloc;
   TextEditingController? emailController;
   TextEditingController? passwordController;
@@ -71,7 +71,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutBack));
+    ).animate(
+        CurvedAnimation(parent: _slideController, curve: Curves.easeOutBack));
 
     _loadCredentials();
 
@@ -84,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   void _loadCredentials() async {
     String? email = await pref.getString(Keys.email);
-    String? password =await pref.getString(Keys.password);
+    String? password = await pref.getString(Keys.password);
 
     if (email.isNotEmpty == true && password.isNotEmpty == true) {
       emailController!.text = email;
@@ -110,91 +111,92 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     return BlocProvider<AuthBloc>(
       create: (context) => _authBloc,
       child: Scaffold(
-          backgroundColor: AppColor.background,
-          body:  BlocListener<AuthBloc, ApiState<LoginResponseModel,ResponseModel>>(
-            listener: (context, state) {
-
-              if (state is ApiSuccess<LoginResponseModel, ResponseModel>) {
-                EasyLoading.dismiss();
-                final userRole =state.data.data.user.role;
-                if(userRole=='surveyor'){
-                  context.router.replaceAll([const MainRoute()]);
-                  // AppRoute.goToNextPage(context: context, screen: MainScreen.route, arguments: {});
-                }else{
-                  IconSnackBar.show(
-                    context,
-                    snackBarType: SnackBarType.alert,
-                    label: 'Invalid Credential',
-                    backgroundColor: Colors.red,
-                    iconColor: Colors.white,
-                  );
-                }
-              } else if (state is ApiFailure<LoginResponseModel, ResponseModel>) {
-                EasyLoading.dismiss();
+        backgroundColor: AppColor.background,
+        body:
+            BlocListener<AuthBloc, ApiState<LoginResponseModel, ResponseModel>>(
+          listener: (context, state) {
+            if (state is ApiSuccess<LoginResponseModel, ResponseModel>) {
+              EasyLoading.dismiss();
+              final userRole = state.data.data.user.role;
+              if (userRole == 'surveyor') {
+                context.router.replaceAll([const MainRoute()]);
+                // AppRoute.goToNextPage(context: context, screen: MainScreen.route, arguments: {});
+              } else {
                 IconSnackBar.show(
                   context,
                   snackBarType: SnackBarType.alert,
-                  label: state.error.data.toString(),
-                  backgroundColor: Colors.red,
-                  iconColor: Colors.white,
-                );
-              } else if (state is TokenExpired<LoginResponseModel, ResponseModel>) {
-                EasyLoading.dismiss();
-                IconSnackBar.show(
-                  context,
-                  snackBarType: SnackBarType.alert,
-                  label: state.error.data.toString(),
+                  label: 'Invalid Credential',
                   backgroundColor: Colors.red,
                   iconColor: Colors.white,
                 );
               }
-            },
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height,
-                child: Stack(
-                  children: [
-                    // Background decorative elements
-                    _buildBackgroundDecoration(),
-                    // Main content
-                    FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: SlideTransition(
-                        position: _slideAnimation,
-                        child: SafeArea(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 20.w),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // Top spacer for visual breathing room
-                                SizedBox(height: Spacing.xxLarge.h),
-                                // Logo and header section
-                                _buildHeaderSection(),
-                                SizedBox(height: 20.h),
-                                // Space before form
-                                SizedBox(height: Spacing.large.h),
-                                // Login form card
-                                _buildLoginForm(),
-                                // Push footer to bottom
-                                // const Spacer(),
-                                SizedBox(height: 60.h),
-                                // Footer section
-                                _buildFooter(),
-                                // Bottom safe padding
-                              ],
-                            ),
+            } else if (state is ApiFailure<LoginResponseModel, ResponseModel>) {
+              EasyLoading.dismiss();
+              IconSnackBar.show(
+                context,
+                snackBarType: SnackBarType.alert,
+                label: state.error.data.toString(),
+                backgroundColor: Colors.red,
+                iconColor: Colors.white,
+              );
+            } else if (state
+                is TokenExpired<LoginResponseModel, ResponseModel>) {
+              EasyLoading.dismiss();
+              IconSnackBar.show(
+                context,
+                snackBarType: SnackBarType.alert,
+                label: state.error.data.toString(),
+                backgroundColor: Colors.red,
+                iconColor: Colors.white,
+              );
+            }
+          },
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height,
+              child: Stack(
+                children: [
+                  // Background decorative elements
+                  _buildBackgroundDecoration(),
+                  // Main content
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: SlideTransition(
+                      position: _slideAnimation,
+                      child: SafeArea(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 20.w),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Top spacer for visual breathing room
+                              SizedBox(height: Spacing.xxLarge.h),
+                              // Logo and header section
+                              _buildHeaderSection(),
+                              SizedBox(height: 20.h),
+                              // Space before form
+                              SizedBox(height: Spacing.large.h),
+                              // Login form card
+                              _buildLoginForm(),
+                              // Push footer to bottom
+                              // const Spacer(),
+                              SizedBox(height: 60.h),
+                              // Footer section
+                              _buildFooter(),
+                              // Bottom safe padding
+                            ],
                           ),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
         ),
+      ),
     );
   }
 
@@ -283,7 +285,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           child: Image.network(
             'https://sikasolutions.in/images/sikalogo.png',
             width: 120,
-
           ),
         ),
 
@@ -314,7 +315,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     );
   }
 
-  
   Widget _buildLoginForm() {
     return Container(
       padding: EdgeInsets.all(Spacing.medium.w),
@@ -371,19 +371,22 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                       width: 20.w,
                       height: 20.h,
                       decoration: BoxDecoration(
-                        color: _rememberMe ? AppColor.primary : Colors.transparent,
+                        color:
+                            _rememberMe ? AppColor.primary : Colors.transparent,
                         border: Border.all(
-                          color: _rememberMe ? AppColor.primary : AppColor.textMuted,
+                          color: _rememberMe
+                              ? AppColor.primary
+                              : AppColor.textMuted,
                           width: 2,
                         ),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: _rememberMe
                           ? Icon(
-                        Icons.check,
-                        size: 14.sp,
-                        color: AppColor.white,
-                      )
+                              Icons.check,
+                              size: 14.sp,
+                              color: AppColor.white,
+                            )
                           : null,
                     ),
                     SizedBox(width: Spacing.small.w),
@@ -473,17 +476,19 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               ),
               suffixIcon: isPassword
                   ? IconButton(
-                onPressed: () {
-                  setState(() {
-                    _isPasswordVisible = !_isPasswordVisible;
-                  });
-                },
-                icon: Icon(
-                  _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                  color: AppColor.textMuted,
-                  size: 20.sp,
-                ),
-              )
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                      icon: Icon(
+                        _isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: AppColor.textMuted,
+                        size: 20.sp,
+                      ),
+                    )
                   : null,
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
@@ -519,7 +524,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap:(){
+          onTap: () {
             login(context: context);
           },
           borderRadius: BorderRadius.circular(16),
@@ -588,7 +593,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
             fontWeight: FontWeight.w500,
           ),
         ),
-            SizedBox(height: Spacing.medium.h),
+        SizedBox(height: Spacing.medium.h),
         Padding(
           padding: EdgeInsets.only(bottom: 16.h),
           child: const AppVersionText(),
@@ -674,6 +679,3 @@ class ModernBackgroundPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
-
-

@@ -150,6 +150,22 @@ class ProjectListRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [SelectProjectScreen]
+class SelectProjectRoute extends PageRouteInfo<void> {
+  const SelectProjectRoute({List<PageRouteInfo>? children})
+    : super(SelectProjectRoute.name, initialChildren: children);
+
+  static const String name = 'SelectProjectRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const SelectProjectScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [SplashScreen]
 class SplashRoute extends PageRouteInfo<void> {
   const SplashRoute({List<PageRouteInfo>? children})

@@ -16,7 +16,7 @@ class LoginRepository {
   final SecurePreference pref = SecurePreference();
 
   //  LOGIN
-  Future<ApiResult<LoginResponseModel,ResponseModel>> login({
+  Future<ApiResult<LoginResponseModel, ResponseModel>> login({
     required String email,
     String? phone,
     required String password,
@@ -32,11 +32,12 @@ class LoginRepository {
       path: ApiEndpoints.login,
       body: body,
       isForm: true,
-      parser:  loginResponseModelFromJson,
+      parser: loginResponseModelFromJson,
       skipAuth: true,
     );
 
-     debugLog('LoginRepository.login: Received response with ${result.status} status');
+    debugLog(
+        'LoginRepository.login: Received response with ${result.status} status');
 
     //  Save tokens & user info if login successful
     if (result.status == ApiStatus.success) {
@@ -47,6 +48,7 @@ class LoginRepository {
       await pref.setString(Keys.email, obj.data.user.email);
       await pref.setString(Keys.groupName, obj.data.user.role);
       await pref.setString(Keys.profileId, obj.data.user.profile?.id ?? '');
+      await pref.setString(Keys.fullName, obj.data.user.profile?.fullName ?? '');
       await pref.setBool(Keys.isActive, obj.data.user.isActive);
       await pref.setString(Keys.accessToken, obj.data.tokens.access);
       await pref.setString(Keys.refreshToken, obj.data.tokens.refresh);
@@ -55,10 +57,10 @@ class LoginRepository {
     return result;
   }
 
-
   // LOGOUT
 
-  Future<ApiResult<SuccessResponseModel,ResponseModel>> logout({required String refreshToken}) async {
+  Future<ApiResult<SuccessResponseModel, ResponseModel>> logout(
+      {required String refreshToken}) async {
     final Map<String, dynamic> body = {
       "refresh": refreshToken,
     };

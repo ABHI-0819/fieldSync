@@ -55,8 +55,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _onLogoutTapped() async {
-    final refreshToken =
-        await _securePref.getString(Keys.refreshToken);
+    final refreshToken = await _securePref.getString(Keys.refreshToken);
 
     _logoutBloc.add(ApiLogout(refreshToken));
   }
@@ -77,7 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (state is ApiFailure<SuccessResponseModel, ResponseModel>) {
       EasyLoading.dismiss();
-      EasyLoading.showError(state.error.message??'Logout Failed.');
+      EasyLoading.showError(state.error.message ?? 'Logout Failed.');
     }
 
     if (state is TokenExpired<SuccessResponseModel, ResponseModel>) {
@@ -126,9 +125,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ApiState<ProfileResponseModel, ResponseModel>>(
                 listener: _profileListener,
                 builder: (context, state) {
-                  if (state is ApiSuccess<ProfileResponseModel, ResponseModel>) {
+                  if (state
+                      is ApiSuccess<ProfileResponseModel, ResponseModel>) {
                     final user = state.data.data;
-
+                    _securePref.setString(Keys.fullName, user.fullName);
                     return SingleChildScrollView(
                       child: Column(
                         children: [
@@ -138,8 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color:
-                                    AppColor.primary.withOpacity(0.3),
+                                color: AppColor.primary.withOpacity(0.3),
                                 width: 2,
                               ),
                             ),
@@ -232,134 +231,135 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-
   ///Simmer Widgets
   Widget _buildShimmerLoading() {
-  return Shimmer.fromColors(
-    baseColor: Colors.grey[300]!,
-    highlightColor: Colors.grey[100]!,
-    child: SingleChildScrollView(
-      child: Column(
-        children: [
-          // Profile Avatar Shimmer
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey.shade300, width: 2),
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Profile Avatar Shimmer
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.grey.shade300, width: 2),
+              ),
+              child: CircleAvatar(
+                radius: 50,
+                backgroundColor: Colors.white,
+              ),
             ),
-            child: CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 24),
-          
-          // Profile Info Card Shimmer
-          _shimmerInfoCard(),
-          const SizedBox(height: 20),
-          
-          // Subscription Card Shimmer
-          _shimmerInfoCard(height: 80),
-          const SizedBox(height: 20),
-          
-          // Settings Tile Shimmer
-          _shimmerActionTile(),
-          const SizedBox(height: 20),
-          
-          // Logout Tile Shimmer  
-          _shimmerActionTile(),
-        ],
-      ),
-    ),
-  );
-}
+            const SizedBox(height: 24),
 
-Widget _buildProfileContent() {
-  return Column(
-    children: [
-      // Your existing profile avatar
-      Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: AppColor.primary.withOpacity(0.3), width: 2),
-        ),
-        child: CircleAvatar(
-          radius: 50,
-          backgroundColor: AppColor.primary.withOpacity(0.1),
-          child: Icon(Icons.person, size: 50, color: AppColor.primary),
+            // Profile Info Card Shimmer
+            _shimmerInfoCard(),
+            const SizedBox(height: 20),
+
+            // Subscription Card Shimmer
+            _shimmerInfoCard(height: 80),
+            const SizedBox(height: 20),
+
+            // Settings Tile Shimmer
+            _shimmerActionTile(),
+            const SizedBox(height: 20),
+
+            // Logout Tile Shimmer
+            _shimmerActionTile(),
+          ],
         ),
       ),
-      // ... rest of your existing content
-    ],
-  );
-}
+    );
+  }
 
-Widget _shimmerInfoCard({double height = 200}) {
-  return Container(
-    height: height,
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey.shade200),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: List.generate(4, (index) => _shimmerTile()),
-      ),
-    ),
-  );
-}
-
-Widget _shimmerTile() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: Row(
+  Widget _buildProfileContent() {
+    return Column(
       children: [
-        Container(width: 24, height: 24, color: Colors.white),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(width: 80, height: 12, color: Colors.white),
-              const SizedBox(height: 4),
-              Container(width: 120, height: 12, color: Colors.white),
-            ],
+        // Your existing profile avatar
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border:
+                Border.all(color: AppColor.primary.withOpacity(0.3), width: 2),
+          ),
+          child: CircleAvatar(
+            radius: 50,
+            backgroundColor: AppColor.primary.withOpacity(0.1),
+            child: Icon(Icons.person, size: 50, color: AppColor.primary),
           ),
         ),
+        // ... rest of your existing content
       ],
-    ),
-  );
-}
+    );
+  }
 
-Widget _shimmerActionTile() {
-  return Container(
-    height: 56,
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey.shade200),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(16),
+  Widget _shimmerInfoCard({double height = 200}) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: SingleChildScrollView(
+          child: Column(
+            children: List.generate(4, (index) => _shimmerTile()),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _shimmerTile() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           Container(width: 24, height: 24, color: Colors.white),
           const SizedBox(width: 16),
-          Expanded(child: Container(height: 16, color: Colors.white)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(width: 80, height: 12, color: Colors.white),
+                const SizedBox(height: 4),
+                Container(width: 120, height: 12, color: Colors.white),
+              ],
+            ),
+          ),
         ],
       ),
-    ),
-  );
-}
+    );
+  }
+
+  Widget _shimmerActionTile() {
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(width: 24, height: 24, color: Colors.white),
+            const SizedBox(width: 16),
+            Expanded(child: Container(height: 16, color: Colors.white)),
+          ],
+        ),
+      ),
+    );
+  }
 
   /// =========================
   /// UI HELPERS
   /// =========================
-
 
   Widget _infoCard({required List<Widget> children}) {
     return Container(

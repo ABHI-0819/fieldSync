@@ -18,6 +18,8 @@ import '../../../common/bloc/api_state.dart';
 import '../../../common/models/response.mode.dart';
 import '../../../common/screens/tree_marker_bottomsheet.dart';
 import '../../../common/widgets/gps_accuracy_indicator.dart';
+import '../../../common/widgets/location_permission_bottomsheet.dart';
+import '../../../common/widgets/map_luncher.dart';
 import '../../../core/config/constants/space.dart';
 import '../../../core/config/resources/images.dart';
 import '../../../core/config/themes/app_color.dart';
@@ -25,11 +27,12 @@ import '../../../core/config/themes/app_fonts.dart';
 import '../../project/models/project_detail_response_model.dart';
 import '../../survey/bloc/tree_survey_bloc.dart';
 import '../../survey/models/tree_survey_list_model.dart';
+
 @RoutePage()
 class MapScreen extends StatefulWidget {
   static const route = '/map';
   final String projectId;
-  const MapScreen({Key? key,required this.projectId}) : super(key: key);
+  const MapScreen({Key? key, required this.projectId}) : super(key: key);
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -64,7 +67,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       ),
     ),
     'Satellite': TileLayer(
-      urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      urlTemplate:
+          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       userAgentPackageName: 'com.example.app',
     ),
     'Terrain': TileLayer(
@@ -73,7 +77,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       userAgentPackageName: 'com.example.app',
     ),
   };
-  
+
   late ProjectDetailBloc projectDetailBloc;
   late TreeSurveyedBloc treeSurveyedBloc;
 
@@ -139,7 +143,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
       // Move map to current location
       _mapController.move(_currentPosition!, _currentZoom);
-
     } catch (e) {
       _showLocationError('Failed to get location: ${e.toString()}');
     }
@@ -197,9 +200,9 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _moveToSelectedLocation() {
+  void _moveToSelectedLocation({double? currentZoom}) {
     if (_selectedLocation != null) {
-      _mapController.move(_selectedLocation!, _currentZoom);
+      _mapController.move(_selectedLocation!, currentZoom ?? _currentZoom);
     }
   }
 
@@ -218,12 +221,16 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       );
       return;
     }
-    context.router.push(TreeSurveyFormRoute(latitude: _selectedLocation!.latitude, longitude: _selectedLocation!.longitude, projectId: widget.projectId));
-    // AppRoute.goToNextPage(context: context, screen: TreeSurveyFormScreen.route, arguments: {
-    //   'projectId':widget.projectId,
-    //   'latitude': _selectedLocation!.latitude,
-    //   'longitude': _selectedLocation!.longitude,
-    // });
+    context.router
+        .push(TreeSurveyFormRoute(
+            latitude: _selectedLocation!.latitude,
+            longitude: _selectedLocation!.longitude,
+            projectId: widget.projectId))
+        .then((result) {
+      if (result != null && result is String) {
+        treeSurveyedBloc.add(ApiFetch(projectId: widget.projectId));
+      }
+    });
   }
 
   List<Widget> buildProjectMapLayers(BuildContext context) {
@@ -235,7 +242,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (state is ApiSuccess<ProjectDetailResponse,ResponseModel>) {
+          if (state is ApiSuccess<ProjectDetailResponse, ResponseModel>) {
             final project = state.data.data;
             // _mapController.move(project.point!, 19);
             if (project.polygonLatLngs.isNotEmpty) {
@@ -254,7 +261,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             ]);
           }
 
-          if (state is ApiFailure<ProjectDetailResponse,ResponseModel>) {
+          if (state is ApiFailure<ProjectDetailResponse, ResponseModel>) {
             return Center(child: Text(state.error.message ?? "Error"));
           }
 
@@ -263,7 +270,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       ),
     ];
   }
-
 
   List<Widget> buildTreesMapLayer(BuildContext context) {
     return [
@@ -284,7 +290,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               .map((tree) {
             // Convert model LatLng (LatLng from package:latlong2) to the alias used by your map
             final modelLatLng = tree.location!.latLng!;
-            final point = latlng.LatLng(modelLatLng.latitude, modelLatLng.longitude);
+            final point =
+                latlng.LatLng(modelLatLng.latitude, modelLatLng.longitude);
 
             return Marker(
               point: point,
@@ -294,13 +301,13 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               // Marker requires `child`
               child: GestureDetector(
                 onTap: () {
-                  showTreeDetails(context,tree);
+                  showTreeDetails(context, tree);
                   // Replace with your bottom sheet / details UI
                   // ScaffoldMessenger.of(context).showSnackBar(
                   //   SnackBar(content: Text(tree.speciesName.isNotEmpty ? tree.speciesName : 'Unknown')),
                   // );
                 },
-                child:SvgPicture.asset(Images.markerIcon),
+                child: SvgPicture.asset(Images.markerIcon),
               ),
             );
           }).toList();
@@ -379,16 +386,17 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         treeData: treeData,
         onDelete: () {
           // Handle delete action
-
         },
         onNavigate: () {
+          MapLauncherUtil.openDirections(
+            latitude: treeData.location!.coordinates[1],
+            longitude: treeData.location!.coordinates[0],
+          );
           // Handle navigation action
-
         },
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -408,316 +416,320 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             ],
           ),
           child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Row(
-                children: [
-                  // Back button
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: Colors.grey.shade200,
-                        width: 0.5,
-                      ),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
+            child: LocationPermissionListener(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Row(
+                  children: [
+                    // Back button
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(14),
-                        onTap: () => Navigator.of(context).canPop()
-                            ? Navigator.of(context).pop()
-                            : null,
-                        child: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: Colors.grey.shade700,
-                          size: 18,
+                        border: Border.all(
+                          color: Colors.grey.shade200,
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: () => Navigator.of(context).canPop()
+                              ? Navigator.of(context).pop()
+                              : null,
+                          child: Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: Colors.grey.shade700,
+                            size: 18,
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  // Title
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Select Location',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                          color: Colors.grey.shade800,
-                          letterSpacing: -0.5,
+                    // Title
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          'Select Location',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 18,
+                            color: Colors.grey.shade800,
+                            letterSpacing: -0.5,
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  // Layer selector button
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: Colors.blue.shade100,
-                        width: 0.5,
-                      ),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
+                    // Layer selector button
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
                         borderRadius: BorderRadius.circular(14),
-                        onTap: _showLayerSelector,
-                        child: Icon(
-                          Icons.layers_rounded,
-                          color: Colors.blue.shade600,
-                          size: 20,
+                        border: Border.all(
+                          color: Colors.blue.shade100,
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: _showLayerSelector,
+                          child: Icon(
+                            Icons.layers_rounded,
+                            color: Colors.blue.shade600,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ),
       body: MultiBlocProvider(
-  providers: [
-    BlocProvider(
-  create: (context) => projectDetailBloc,
-),
-    BlocProvider(
-      create: (context) => treeSurveyedBloc,
-    ),
-  ],
-  child: Stack(
-        children: [
-          // Map
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _currentPosition ?? const latlng.LatLng(19.0760, 72.8777),
-              initialZoom: _currentZoom,
-              minZoom: 3,
-              maxZoom: 20,
-              // 👇 Listen to map movement to update target location
-              onPositionChanged: (position, hasGesture) {
-                _currentZoom = position.zoom ?? _currentZoom;
-                _onMapMoved(position); // Update selected location
-              },
-            ),
-            children: [
-              // Base layer
-              _baseLayers[_currentLayer]!,
-              ...buildProjectMapLayers(context),
-              // Current location marker (optional)
-              if (_currentPosition != null)
-                CurrentLocationLayer(),
-
-              // Tree markers with clustering
-              ...buildTreesMapLayer(context),
-
-              //  CENTERED TARGET ICON (crosshair) - always centered
-              MarkerLayer(
-                rotate: true,
-                markers: [
-                  Marker(
-                    point: _selectedLocation ?? _currentPosition ?? const latlng.LatLng(0, 0),
-                    width: 55,
-                    height: 55,
-                    child: SvgPicture.asset(Images.aimIcon),
-                  ),
-                ],
-              ),
-            ],
+        providers: [
+          BlocProvider(
+            create: (context) => projectDetailBloc,
           ),
-
-          // GPS Accuracy indicator
-            Positioned(
-              top: 16,
-              left: 16,
-              child: GpsAccuracyIndicator()
-            ),
-
-          // Zoom controls
-          Positioned(
-            right: 16,
-            top: MediaQuery.of(context).size.height * 0.3,
-            child: Column(
+          BlocProvider(
+            create: (context) => treeSurveyedBloc,
+          ),
+        ],
+        child: Stack(
+          children: [
+            // Map
+            FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter:
+                    _currentPosition ?? const latlng.LatLng(19.0760, 72.8777),
+                initialZoom: _currentZoom,
+                minZoom: 3,
+                maxZoom: 20,
+                // 👇 Listen to map movement to update target location
+                onPositionChanged: (position, hasGesture) {
+                  _currentZoom = position.zoom ?? _currentZoom;
+                  _onMapMoved(position); // Update selected location
+                },
+              ),
               children: [
-                // Zoom in
-                Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () {
-                        _mapController.move(
-                          _mapController.camera.center,
-                          (_currentZoom + 1).clamp(3, 18),
-                        );
-                      },
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.add,
-                          color: Colors.grey.shade700,
-                          size: 24,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                // Base layer
+                _baseLayers[_currentLayer]!,
+                ...buildProjectMapLayers(context),
+                // Current location marker (optional)
+                if (_currentPosition != null) CurrentLocationLayer(),
 
-                // Zoom out
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () {
-                        _mapController.move(
-                          _mapController.camera.center,
-                          (_currentZoom - 1).clamp(3, 18),
-                        );
-                      },
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.remove,
-                          color: Colors.grey.shade700,
-                          size: 24,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+                // Tree markers with clustering
+                ...buildTreesMapLayer(context),
 
-          // Current location FAB
-          Positioned(
-            right: 16,
-            bottom: 140, // Moved up to make space for confirm button
-            child: FloatingActionButton(
-              heroTag: "location",
-              onPressed: _isLocating ? null : () async {
-                await _getCurrentLocation();
-                _moveToSelectedLocation();
-              },
-              backgroundColor: Colors.white,
-              elevation: 4,
-              child: _isLocating
-                  ? SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation(Colors.blue.shade600),
-                ),
-              )
-                  : Icon(
-                Icons.my_location,
-                color: Colors.blue.shade600,
-              ),
-            ),
-          ),
-
-          // ✅ CONFIRM LOCATION BUTTON (FAB at bottom right)
-          Positioned(
-            // right: 16,
-            bottom: 5,
-            right: 20,
-            left: 20,
-            child:SafeArea(
-              child: Container(
-                height: 50.h,
-                width: 1.sw,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColor.primary, AppColor.primaryLight],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16.r!),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColor.primary.withOpacity(0.4),
-                      spreadRadius: 0,
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
+                //  CENTERED TARGET ICON (crosshair) - always centered
+                MarkerLayer(
+                  rotate: true,
+                  markers: [
+                    Marker(
+                      point: _selectedLocation ??
+                          _currentPosition ??
+                          const latlng.LatLng(0, 0),
+                      width: 55,
+                      height: 55,
+                      child: SvgPicture.asset(Images.aimIcon),
                     ),
                   ],
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap:_confirmLocation,
-                    borderRadius: BorderRadius.circular(16),
-                    child: Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Confirm',
-                            style: AppFonts.regular.copyWith(
-                              color: AppColor.white,
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.5,
+              ],
+            ),
+
+            // GPS Accuracy indicator
+            Positioned(top: 16, left: 16, child: GpsAccuracyIndicator()),
+
+            // Zoom controls
+            Positioned(
+              right: 16,
+              top: MediaQuery.of(context).size.height * 0.3,
+              child: Column(
+                children: [
+                  // Zoom in
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          _mapController.move(
+                            _mapController.camera.center,
+                            (_currentZoom + 1).clamp(3, 18),
+                          );
+                        },
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.add,
+                            color: Colors.grey.shade700,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Zoom out
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          _mapController.move(
+                            _mapController.camera.center,
+                            (_currentZoom - 1).clamp(3, 18),
+                          );
+                        },
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.remove,
+                            color: Colors.grey.shade700,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Current location FAB
+            Positioned(
+              right: 16,
+              bottom: 140, // Moved up to make space for confirm button
+              child: FloatingActionButton(
+                heroTag: "location",
+                onPressed: _isLocating
+                    ? null
+                    : () async {
+                        await _getCurrentLocation();
+                        _moveToSelectedLocation(currentZoom: 18.0);
+                      },
+                backgroundColor: Colors.white,
+                elevation: 4,
+                child: _isLocating
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation(Colors.blue.shade600),
+                        ),
+                      )
+                    : Icon(
+                        Icons.my_location,
+                        color: Colors.blue.shade600,
+                      ),
+              ),
+            ),
+
+            // ✅ CONFIRM LOCATION BUTTON (FAB at bottom right)
+            Positioned(
+              // right: 16,
+              bottom: 5,
+              right: 20,
+              left: 20,
+              child: SafeArea(
+                child: Container(
+                  height: 50.h,
+                  width: 1.sw,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColor.primary, AppColor.primaryLight],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16.r!),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColor.primary.withOpacity(0.4),
+                        spreadRadius: 0,
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _confirmLocation,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Confirm Location',
+                              style: AppFonts.regular.copyWith(
+                                color: AppColor.white,
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
                             ),
-                          ),
-                          SizedBox(width: Spacing.small.w),
-                          Icon(
-                            Icons.arrow_forward_rounded,
-                            color: AppColor.white,
-                            size: 20.sp,
-                          ),
-                        ],
+                            SizedBox(width: Spacing.small.w),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: AppColor.white,
+                              size: 20.sp,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-               /*
+              /*
             FloatingActionButton.extended(
               heroTag: "confirm",
               onPressed: _confirmLocation,
@@ -728,10 +740,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             ),
 
                 */
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
-),
     );
   }
 
@@ -773,36 +785,46 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             const SizedBox(height: 16),
 
             // Layer options
-            ...['OpenStreetMap', 'Satellite', 'Terrain'].map((layer) =>
-                Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    color: _currentLayer == layer ? Colors.blue.shade50 : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _currentLayer == layer ? Colors.blue.shade200 : Colors.grey.shade200,
-                    ),
-                  ),
-                  child: ListTile(
-                    title: Text(
-                      layer,
-                      style: TextStyle(
-                        fontWeight: _currentLayer == layer ? FontWeight.w600 : FontWeight.w400,
-                        color: _currentLayer == layer ? Colors.blue.shade700 : Colors.grey.shade700,
+            ...['OpenStreetMap', 'Satellite', 'Terrain']
+                .map(
+                  (layer) => Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: _currentLayer == layer
+                          ? Colors.blue.shade50
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _currentLayer == layer
+                            ? Colors.blue.shade200
+                            : Colors.grey.shade200,
                       ),
                     ),
-                    trailing: _currentLayer == layer
-                        ? Icon(Icons.check, color: Colors.blue.shade700)
-                        : null,
-                    onTap: () {
-                      setState(() {
-                        _currentLayer = layer;
-                      });
-                      Navigator.pop(context);
-                    },
+                    child: ListTile(
+                      title: Text(
+                        layer,
+                        style: TextStyle(
+                          fontWeight: _currentLayer == layer
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                          color: _currentLayer == layer
+                              ? Colors.blue.shade700
+                              : Colors.grey.shade700,
+                        ),
+                      ),
+                      trailing: _currentLayer == layer
+                          ? Icon(Icons.check, color: Colors.blue.shade700)
+                          : null,
+                      onTap: () {
+                        setState(() {
+                          _currentLayer = layer;
+                        });
+                        Navigator.pop(context);
+                      },
+                    ),
                   ),
-                ),
-            ).toList(),
+                )
+                .toList(),
 
             const SizedBox(height: 20),
           ],
