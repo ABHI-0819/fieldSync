@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -88,8 +89,52 @@ class TreeMarkerBottomSheet extends StatelessWidget {
 
           const SizedBox(height: 20),
 
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            height: 220,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: AppColor.border.withOpacity(0.2),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: treeData.thumbnail != null && treeData.thumbnail!.isNotEmpty
+                ? CachedNetworkImage(
+                    imageUrl: treeData.thumbnail!,
+                    fit: BoxFit.cover,
+                    fadeInDuration: const Duration(milliseconds: 200),
+                    placeholder: (context, url) => Container(
+                      color: AppColor.border.withOpacity(0.2),
+                      child: const Center(
+                        child: SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: AppColor.border.withOpacity(0.2),
+                      child: Icon(
+                        Icons.image_not_supported_outlined,
+                        color: AppColor.textMuted,
+                        size: 40,
+                      ),
+                    ),
+                  )
+                : Container(
+                    color: AppColor.border.withOpacity(0.2),
+                    child: Icon(
+                      Icons.image_outlined,
+                      color: AppColor.textMuted,
+                      size: 40,
+                    ),
+                  ),
+          ),
+          const SizedBox(height: 20),
           // Species Information
           Container(
+            width: double.infinity,
             margin: const EdgeInsets.symmetric(horizontal: 20),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -103,40 +148,12 @@ class TreeMarkerBottomSheet extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.eco,
-                      color: AppColor.secondary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Species',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColor.textMuted,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
                 Text(
-                  treeData.speciesName ?? 'Unknown',
+                  '${treeData.speciesName ?? 'Unknown'} (${treeData.speciesNameMarathi ?? ''})',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: AppColor.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  treeData.speciesNameMarathi ?? '',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColor.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 4),

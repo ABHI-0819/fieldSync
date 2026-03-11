@@ -53,6 +53,7 @@ class TreeRepository {
     return result;
   }
 
+
   /// Fetch all surveyed trees for a project
   Future<ApiResult<TreeSurveyResponseList, ResponseModel>> fetchSurveyedTrees({
     required String projectId,
@@ -88,5 +89,4 @@ class TreeRepository {
     );
     return result;
   }
-
 }

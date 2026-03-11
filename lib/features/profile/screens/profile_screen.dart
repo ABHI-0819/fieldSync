@@ -426,6 +426,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
 }
 
 class ProfileTile extends StatelessWidget {

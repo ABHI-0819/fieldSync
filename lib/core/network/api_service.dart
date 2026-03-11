@@ -79,7 +79,8 @@ class ApiService {
       return _mapResponse<T>(response, parser);
     } on DioException catch (e) {
       return _mapDioError<T>(e, parser);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugLog(e.toString(), stackTrace: stackTrace, name: "ApiService.get");
       return ApiResult.error(
         ResponseModel(message: e.toString()),
         ApiStatus.failed,

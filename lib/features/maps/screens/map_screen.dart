@@ -13,10 +13,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart' as latlng;
+import 'package:turf/turf.dart' as turf;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../common/bloc/api_state.dart';
 import '../../../common/models/response.mode.dart';
 import '../../../common/screens/tree_marker_bottomsheet.dart';
+import '../../../common/widgets/delete_confirmation.dart';
 import '../../../common/widgets/gps_accuracy_indicator.dart';
 import '../../../common/widgets/location_permission_bottomsheet.dart';
 import '../../../common/widgets/map_luncher.dart';
@@ -24,6 +26,7 @@ import '../../../core/config/constants/space.dart';
 import '../../../core/config/resources/images.dart';
 import '../../../core/config/themes/app_color.dart';
 import '../../../core/config/themes/app_fonts.dart';
+import '../../../core/utils/geofence_helper.dart';
 import '../../project/models/project_detail_response_model.dart';
 import '../../survey/bloc/tree_survey_bloc.dart';
 import '../../survey/models/tree_survey_list_model.dart';
@@ -41,6 +44,8 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   final MapController _mapController = MapController();
   late final AnimationController _fabAnimationController;
+
+  ProjectDetail? _projectDetail;
 
   // Map state
   String _currentLayer = 'OpenStreetMap';
@@ -80,6 +85,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
   late ProjectDetailBloc projectDetailBloc;
   late TreeSurveyedBloc treeSurveyedBloc;
+  late SurveyDeleteBLoc treeSurveyDeleteBloc;
 
   @override
   void initState() {
@@ -92,6 +98,9 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       ProjectRepository(),
     );
     treeSurveyedBloc = TreeSurveyedBloc(
+      TreeRepository(),
+    );
+    treeSurveyDeleteBloc = SurveyDeleteBLoc(
       TreeRepository(),
     );
     projectDetailBloc.add(ApiFetch(projectId: widget.projectId));
@@ -217,22 +226,78 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   void _confirmLocation() {
     if (_selectedLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please select a location first")),
+        const SnackBar(content: Text("Please select a location first")),
       );
       return;
     }
+
+    final selected = _selectedLocation!;
+    final polygonLatLngs = _projectDetail?.polygonLatLngs;
+
+    // CASE 1: No polygon → allow anywhere
+    if (polygonLatLngs == null || polygonLatLngs.isEmpty) {
+      _navigateToSurvey(selected);
+      return;
+    }
+
+    // CASE 2: Polygon exists → validate
+    final polygonCoords = [
+      polygonLatLngs.map((p) => turf.Position(p.longitude, p.latitude)).toList()
+    ];
+
+    final bool isInside = isPointInsidePolygon(
+      latitude: selected.latitude,
+      longitude: selected.longitude,
+      polygonCoordinates: polygonCoords,
+    );
+
+    if (!isInside) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please select a point inside project boundary"),
+        ),
+      );
+      return;
+    }
+
+    // valid location
+    _navigateToSurvey(selected);
+  }
+
+  void _navigateToSurvey(latlng.LatLng selected) {
     context.router
-        .push(TreeSurveyFormRoute(
-            latitude: _selectedLocation!.latitude,
-            longitude: _selectedLocation!.longitude,
-            projectId: widget.projectId))
+        .push(
+      TreeSurveyFormRoute(
+        latitude: selected.latitude,
+        longitude: selected.longitude,
+        projectId: widget.projectId,
+      ),
+    )
         .then((result) {
       if (result != null && result is String) {
         treeSurveyedBloc.add(ApiFetch(projectId: widget.projectId));
       }
     });
   }
-
+  // void _confirmLocation() {
+  //   if (_selectedLocation == null) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text("Please select a location first")),
+  //     );
+  //     return;
+  //   }
+  //   context.router
+  //       .push(TreeSurveyFormRoute(
+  //           latitude: _selectedLocation!.latitude,
+  //           longitude: _selectedLocation!.longitude,
+  //           projectId: widget.projectId))
+  //       .then((result) {
+  //     if (result != null && result is String) {
+  //       treeSurveyedBloc.add(ApiFetch(projectId: widget.projectId));
+  //     }
+  //   });
+  // }
+  /*
   List<Widget> buildProjectMapLayers(BuildContext context) {
     return [
       BlocBuilder<ProjectDetailBloc,
@@ -246,23 +311,81 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             final project = state.data.data;
             // _mapController.move(project.point!, 19);
             if (project.polygonLatLngs.isNotEmpty) {
+              return PolygonLayer(polygons: [
+                Polygon(
+                  points: project.polygonLatLngs,
+                  color: Colors.green.withOpacity(0.1),
+                  borderStrokeWidth: 2,
+                  borderColor: Colors.green,
+                ),
+              ]);
               // Move map to fit polygon
               //   _mapController.move(
               //     latlng.LatLng(19.16715954200849,73.2469471973667),_currentZoom
               //   );
             }
-            return PolygonLayer(polygons: [
-              Polygon(
-                points: project.polygonLatLngs,
-                color: Colors.green.withOpacity(0.1),
-                borderStrokeWidth: 2,
-                borderColor: Colors.green,
-              ),
-            ]);
+            // return PolygonLayer(polygons: [
+            //   Polygon(
+            //     points: project.polygonLatLngs,
+            //     color: Colors.green.withOpacity(0.1),
+            //     borderStrokeWidth: 2,
+            //     borderColor: Colors.green,
+            //   ),
+            // ]);
           }
 
           if (state is ApiFailure<ProjectDetailResponse, ResponseModel>) {
             return Center(child: Text(state.error.message ?? "Error"));
+          }
+
+          return const SizedBox.shrink();
+        },
+      ),
+    ];
+  }*/
+
+  List<Widget> buildProjectMapLayers(BuildContext context) {
+    return [
+      BlocConsumer<ProjectDetailBloc,
+          ApiState<ProjectDetailResponse, ResponseModel>>(
+        listener: (context, state) {
+          if (state is ApiSuccess<ProjectDetailResponse, ResponseModel>) {
+            final project = state.data.data;
+
+            _projectDetail = project; // store project safely
+
+            // Optional: move map when data loads
+            // if (project.point != null) {
+            //   _mapController.move(project.point!, 19);
+            // }
+          }
+        },
+        builder: (context, state) {
+          if (state is ApiLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (state is ApiSuccess<ProjectDetailResponse, ResponseModel>) {
+            final project = state.data.data;
+
+            if (project.polygonLatLngs.isNotEmpty) {
+              return PolygonLayer(
+                polygons: [
+                  Polygon(
+                    points: project.polygonLatLngs,
+                    color: Colors.green.withOpacity(0.1),
+                    borderStrokeWidth: 2,
+                    borderColor: Colors.green,
+                  ),
+                ],
+              );
+            }
+          }
+
+          if (state is ApiFailure<ProjectDetailResponse, ResponseModel>) {
+            return Center(
+              child: Text(state.error.message ?? "Error"),
+            );
           }
 
           return const SizedBox.shrink();
@@ -384,7 +507,19 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       backgroundColor: Colors.transparent,
       builder: (context) => TreeMarkerBottomSheet(
         treeData: treeData,
-        onDelete: () {
+        onDelete: () async {
+          final confirmed = await showDeleteConfirmationDialog(
+            context: context,
+            title: 'Delete Record?',
+            description:
+                'This record will be permanently deleted and cannot be recovered.',
+          );
+          if (confirmed == true) {
+            treeSurveyDeleteBloc.add(ApiDelete(id: treeData.id));
+            treeSurveyedBloc.add(ApiFetch(projectId: widget.projectId));
+          }
+
+          // treeSurveyDeleteBloc.add(ApiDelete(id: treeData.id));
           // Handle delete action
         },
         onNavigate: () {
@@ -504,6 +639,9 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           ),
           BlocProvider(
             create: (context) => treeSurveyedBloc,
+          ),
+          BlocProvider(
+            create: (context) => treeSurveyDeleteBloc,
           ),
         ],
         child: Stack(
@@ -672,7 +810,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               ),
             ),
 
-            // ✅ CONFIRM LOCATION BUTTON (FAB at bottom right)
+            // CONFIRM LOCATION BUTTON (FAB at bottom right)
             Positioned(
               // right: 16,
               bottom: 5,
@@ -688,7 +826,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
-                    borderRadius: BorderRadius.circular(16.r!),
+                    borderRadius: BorderRadius.circular(16.r),
                     boxShadow: [
                       BoxShadow(
                         color: AppColor.primary.withOpacity(0.4),
@@ -831,5 +969,32 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+
+  /// point in polygon check (if you want to restrict tree planting inside project area)
+  String? insideAreaId;
+
+  void onMapTap(latlng.LatLng point, ProjectDetail projectDetail) {
+    insideAreaId = null;
+
+    final polygonLatLngs = projectDetail.polygonLatLngs;
+
+    if (polygonLatLngs.isEmpty) return;
+
+    final polygonCoords = [
+      polygonLatLngs
+          .map((latLng) => turf.Position(latLng.longitude, latLng.latitude))
+          .toList()
+    ];
+
+    final bool isInside = isPointInsidePolygon(
+      latitude: point.latitude,
+      longitude: point.longitude,
+      polygonCoordinates: polygonCoords,
+    );
+
+    if (isInside) {
+      insideAreaId = projectDetail.id;
+    }
   }
 }

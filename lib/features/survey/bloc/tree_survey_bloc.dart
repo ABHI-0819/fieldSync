@@ -10,7 +10,8 @@ import '../../../core/network/network_status.dart';
 import '../../../core/utils/logger.dart';
 import '../models/tree_survey_list_model.dart';
 
-class TreeSurveyBloc extends Bloc<ApiEvent, ApiState<SuccessResponseModel, ResponseModel>> {
+class TreeSurveyBloc
+    extends Bloc<ApiEvent, ApiState<SuccessResponseModel, ResponseModel>> {
   final TreeRepository _repository;
 
   TreeSurveyBloc(this._repository) : super(ApiInitial()) {
@@ -18,9 +19,9 @@ class TreeSurveyBloc extends Bloc<ApiEvent, ApiState<SuccessResponseModel, Respo
   }
 
   Future<void> _onAddTreeSurvey(
-      AddTreeSurvey event,
-      Emitter<ApiState<SuccessResponseModel, ResponseModel>> emit,
-      ) async {
+    AddTreeSurvey event,
+    Emitter<ApiState<SuccessResponseModel, ResponseModel>> emit,
+  ) async {
     emit(ApiLoading());
 
     try {
@@ -53,7 +54,8 @@ class TreeSurveyBloc extends Bloc<ApiEvent, ApiState<SuccessResponseModel, Respo
   }
 }
 
-class TreeSurveyedBloc extends Bloc<ApiEvent, ApiState<TreeSurveyResponseList, ResponseModel>> {
+class TreeSurveyedBloc
+    extends Bloc<ApiEvent, ApiState<TreeSurveyResponseList, ResponseModel>> {
   final TreeRepository repository;
 
   TreeSurveyedBloc(this.repository) : super(ApiInitial()) {
@@ -61,12 +63,13 @@ class TreeSurveyedBloc extends Bloc<ApiEvent, ApiState<TreeSurveyResponseList, R
   }
 
   Future<void> _onFetchTreeSpecies(
-      ApiFetch event,
-      Emitter<ApiState<TreeSurveyResponseList, ResponseModel>> emit,
-      ) async {
+    ApiFetch event,
+    Emitter<ApiState<TreeSurveyResponseList, ResponseModel>> emit,
+  ) async {
     emit(ApiLoading());
     try {
-      final result = await repository.fetchSurveyedTrees(projectId: event.projectId!);
+      final result =
+          await repository.fetchSurveyedTrees(projectId: event.projectId!);
 
       switch (result.status) {
         case ApiStatus.success:
@@ -86,6 +89,47 @@ class TreeSurveyedBloc extends Bloc<ApiEvent, ApiState<TreeSurveyResponseList, R
       }
     } catch (e, stackTrace) {
       emit(ApiFailure(ResponseModel(message: 'Something went wrong.')));
+    }
+  }
+
+}
+
+
+class SurveyDeleteBLoc extends Bloc<ApiEvent, ApiState<SuccessResponseModel, ResponseModel>> {
+  final TreeRepository repository;
+
+  SurveyDeleteBLoc(this.repository) : super(ApiInitial()) {
+    on<ApiDelete>(_onDeleteSurvey);
+  }
+
+  Future<void> _onDeleteSurvey(
+      ApiDelete event,
+      Emitter<ApiState<SuccessResponseModel, ResponseModel>> emit,
+      ) async {
+    emit(ApiLoading());
+    try {
+      final result = await repository.deleteTreeSurvey(surveyId: event.id);
+
+      switch (result.status) {
+        case ApiStatus.success:
+          emit(ApiSuccess(result.success!));
+          break;
+
+        case ApiStatus.refreshTokenExpired:
+          emit(TokenExpired(result.error!));
+          break;
+
+        case ApiStatus.unAuthorized:
+        case ApiStatus.badRequest:
+        case ApiStatus.failed:
+        default:
+          emit(ApiFailure(result.error!));
+      }
+    } catch (e, stackTrace) {
+      debugLog("Error in SurveyDeleteBloc: $e", stackTrace: stackTrace);
+      emit(ApiFailure(
+        ResponseModel(message: 'Failed to delete survey. Please try again.'),
+      ));
     }
   }
 }

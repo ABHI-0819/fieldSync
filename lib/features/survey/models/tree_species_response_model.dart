@@ -56,10 +56,10 @@ class TreeSpeciesResponseModel {
       );
 
   Map<String, dynamic> toJson() => {
-    "status": status,
-    "message": message,
-    "data": List<dynamic>.from(data.map((x) => x.toJson())),
-  };
+        "status": status,
+        "message": message,
+        "data": List<dynamic>.from(data.map((x) => x.toJson())),
+      };
 }
 
 // Model for a single tree species item inside the 'data' array
@@ -73,7 +73,7 @@ class TreeSpeciesData {
   String family;
   String genus;
   String speciesCode;
-  Thumbnail thumbnail;
+  Thumbnail? thumbnail;
   String growthRate;
   String conservationStatus;
   bool isNative;
@@ -89,61 +89,62 @@ class TreeSpeciesData {
     required this.family,
     required this.genus,
     required this.speciesCode,
-    required this.thumbnail,
+    this.thumbnail,
     required this.growthRate,
     required this.conservationStatus,
     required this.isNative,
     required this.isActive,
   });
 
-  factory TreeSpeciesData.fromJson(Map<String, dynamic> json) => TreeSpeciesData(
-    id: json["id"],
-    tid: json["tid"],
-    scientificName: json["scientific_name"],
-    commonName: json["common_name"],
-    localName: json["local_name"],
-    marathiName: json["marathi_name"],
-    family: json["family"],
-    genus: json["genus"],
-    speciesCode: json["species_code"],
-    thumbnail: Thumbnail.fromJson(json["thumbnail"]),
-    growthRate: json["growth_rate"],
-    conservationStatus: json["conservation_status"],
-    isNative: json["is_native"],
-    isActive: json["is_active"],
-  );
+  factory TreeSpeciesData.fromJson(Map<String, dynamic> json) =>
+      TreeSpeciesData(
+        id: json["id"],
+        tid: json["tid"],
+        scientificName: json["scientific_name"],
+        commonName: json["common_name"],
+        localName: json["local_name"],
+        marathiName: json["marathi_name"],
+        family: json["family"],
+        genus: json["genus"],
+        speciesCode: json["species_code"],
+        thumbnail: json["thumbnail"] == null
+            ? null
+            : Thumbnail.fromJson(json["thumbnail"]),
+        growthRate: json["growth_rate"],
+        conservationStatus: json["conservation_status"],
+        isNative: json["is_native"],
+        isActive: json["is_active"],
+      );
 
   Map<String, dynamic> toJson() => {
-    "id": id,
-    "tid": tid,
-    "scientific_name": scientificName,
-    "common_name": commonName,
-    "local_name": localName,
-    "marathi_name": marathiName,
-    "family": family,
-    "genus": genus,
-    "species_code": speciesCode,
-    "thumbnail": thumbnail.toJson(),
-    "growth_rate": growthRate,
-    "conservation_status": conservationStatus,
-    "is_native": isNative,
-    "is_active": isActive,
-  };
+        "id": id,
+        "tid": tid,
+        "scientific_name": scientificName,
+        "common_name": commonName,
+        "local_name": localName,
+        "marathi_name": marathiName,
+        "family": family,
+        "genus": genus,
+        "species_code": speciesCode,
+        "thumbnail": thumbnail?.toJson(),
+        "growth_rate": growthRate,
+        "conservation_status": conservationStatus,
+        "is_native": isNative,
+        "is_active": isActive,
+      };
 }
 
 // Model for the nested 'thumbnail' object
 class Thumbnail {
-  String url;
+  String? url;
 
-  Thumbnail({
-    required this.url,
-  });
+  Thumbnail({this.url});
 
   factory Thumbnail.fromJson(Map<String, dynamic> json) => Thumbnail(
-    url: json["url"],
-  );
+        url: json["url"],
+      );
 
   Map<String, dynamic> toJson() => {
-    "url": url,
-  };
+        "url": url,
+      };
 }

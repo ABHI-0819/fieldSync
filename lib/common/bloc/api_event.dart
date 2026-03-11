@@ -19,18 +19,29 @@ class ApiListFetch extends ApiEvent {
   //String? areaId,   String? vendorId,   String? createdBy,
   final String? areaId;
   final String? diseasesId;
-  final  String? vendorId;
-  final String ? maintenanceStatus;
+  final String? vendorId;
+  final String? maintenanceStatus;
   final String? createdBy;
-  ApiListFetch({this.page, this.pageSize, this.filter, this.search, this.serviceName, this.projectAreaId,this.areaId,this.diseasesId,this.vendorId,this.maintenanceStatus,this.createdBy});
+  ApiListFetch(
+      {this.page,
+      this.pageSize,
+      this.filter,
+      this.search,
+      this.serviceName,
+      this.projectAreaId,
+      this.areaId,
+      this.diseasesId,
+      this.vendorId,
+      this.maintenanceStatus,
+      this.createdBy});
 }
 
 class ApiFetch extends ApiEvent {
-  final String ? id;
-  final String ? projectId;
-  final String ? projectAreaId;
-  final String ? orderId;
-  ApiFetch({this.id,this.projectId,this.projectAreaId,this.orderId});
+  final String? id;
+  final String? projectId;
+  final String? projectAreaId;
+  final String? orderId;
+  ApiFetch({this.id, this.projectId, this.projectAreaId, this.orderId});
 }
 
 class ApiSearch extends ApiEvent {
@@ -44,8 +55,8 @@ class ApiUpdate<T> extends ApiEvent {
 }
 
 class ApiDelete extends ApiEvent {
-  final dynamic id;
-  ApiDelete(this.id);
+  final String id;
+  ApiDelete({required this.id});
 }
 
 class AddTreeSurvey extends ApiEvent {
