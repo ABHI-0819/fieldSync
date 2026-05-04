@@ -27,6 +27,9 @@ class ApiEndpoints {
   static const String treeSurvey = 'api/v1/surveys/tree-surveys/';
   static const String dashboard = 'api/v1/dashboard/overall/';
 
+  // Sync
+  static const String syncSurveys = 'api/v1/sync/surveys/';
+
   // Assets
   static const String imageBaseUrl =
       'https://builtree.sikasolutions.in/';

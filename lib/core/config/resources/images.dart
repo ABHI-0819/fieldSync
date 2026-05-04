@@ -24,5 +24,6 @@ class Images {
   static const String markerIcon = '${_basePathSvg}treeMarker.svg';
 
   static const String logoIcon = '${_basePathImage}logo-bg.png';
+  static const String sikalogo = '${_basePathImage}sikalogo.png';
 
 }

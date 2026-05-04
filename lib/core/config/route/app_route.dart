@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:fieldsync/common/screens/splash_screen.dart';
 import 'package:fieldsync/common/screens/under_development_screen.dart';
 import 'package:fieldsync/features/project/screens/select_project_list.dart';
+import 'package:fieldsync/features/sync/screens/offline_projects_screen.dart';
 import 'package:flutter/widgets.dart'; 
 import '../../../features/authentication/screens/login_screen.dart';
 import '../../../features/home/screens/main_screen.dart';
@@ -9,6 +10,7 @@ import '../../../features/maps/screens/map_screen.dart';
 import '../../../features/project/screens/project_detail_screen.dart';
 import '../../../features/project/screens/project_list_screen.dart';
 import '../../../features/survey/screens/tree_survey_form.dart';
+import '../../../features/sync/screens/resource_sync_screen.dart';
 
 
 part 'app_route.gr.dart'; // Generated file
@@ -53,6 +55,14 @@ class AppRouter extends RootStackRouter {
     AutoRoute(
       path: UnderDevelopmentScreen.route,
       page: UnderDevelopmentRoute.page,// Makes this the default/initial route
+    ),
+    AutoRoute(
+      path: OfflineProjectsScreen.route,
+      page: OfflineProjectsRoute.page,// Makes this the default/initial route
+    ),
+    AutoRoute(
+      path: ResourceSyncScreen.route,
+      page: ResourceSyncRoute.page,
     ),
     // Add more routes here later, e.g., AutoRoute(path: '/home', page: HomeRoute.page)
   ];

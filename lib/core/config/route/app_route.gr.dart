@@ -87,6 +87,22 @@ class MapRouteArgs {
 }
 
 /// generated route for
+/// [OfflineProjectsScreen]
+class OfflineProjectsRoute extends PageRouteInfo<void> {
+  const OfflineProjectsRoute({List<PageRouteInfo>? children})
+    : super(OfflineProjectsRoute.name, initialChildren: children);
+
+  static const String name = 'OfflineProjectsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const OfflineProjectsScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [ProjectDetailScreen]
 class ProjectDetailRoute extends PageRouteInfo<ProjectDetailRouteArgs> {
   ProjectDetailRoute({
@@ -150,6 +166,53 @@ class ProjectListRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [ResourceSyncScreen]
+class ResourceSyncRoute extends PageRouteInfo<ResourceSyncRouteArgs> {
+  ResourceSyncRoute({
+    Key? key,
+    required String projectId,
+    List<PageRouteInfo>? children,
+  }) : super(
+         ResourceSyncRoute.name,
+         args: ResourceSyncRouteArgs(key: key, projectId: projectId),
+         initialChildren: children,
+       );
+
+  static const String name = 'ResourceSyncRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<ResourceSyncRouteArgs>();
+      return ResourceSyncScreen(key: args.key, projectId: args.projectId);
+    },
+  );
+}
+
+class ResourceSyncRouteArgs {
+  const ResourceSyncRouteArgs({this.key, required this.projectId});
+
+  final Key? key;
+
+  final String projectId;
+
+  @override
+  String toString() {
+    return 'ResourceSyncRouteArgs{key: $key, projectId: $projectId}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! ResourceSyncRouteArgs) return false;
+    return key == other.key && projectId == other.projectId;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ projectId.hashCode;
+}
+
+/// generated route for
 /// [SelectProjectScreen]
 class SelectProjectRoute extends PageRouteInfo<void> {
   const SelectProjectRoute({List<PageRouteInfo>? children})
@@ -189,6 +252,7 @@ class TreeSurveyFormRoute extends PageRouteInfo<TreeSurveyFormRouteArgs> {
     required String projectId,
     required double latitude,
     required double longitude,
+    bool isOfflineMode = false,
     List<PageRouteInfo>? children,
   }) : super(
          TreeSurveyFormRoute.name,
@@ -197,6 +261,7 @@ class TreeSurveyFormRoute extends PageRouteInfo<TreeSurveyFormRouteArgs> {
            projectId: projectId,
            latitude: latitude,
            longitude: longitude,
+           isOfflineMode: isOfflineMode,
          ),
          initialChildren: children,
        );
@@ -212,6 +277,7 @@ class TreeSurveyFormRoute extends PageRouteInfo<TreeSurveyFormRouteArgs> {
         projectId: args.projectId,
         latitude: args.latitude,
         longitude: args.longitude,
+        isOfflineMode: args.isOfflineMode,
       );
     },
   );
@@ -223,6 +289,7 @@ class TreeSurveyFormRouteArgs {
     required this.projectId,
     required this.latitude,
     required this.longitude,
+    this.isOfflineMode = false,
   });
 
   final Key? key;
@@ -233,9 +300,11 @@ class TreeSurveyFormRouteArgs {
 
   final double longitude;
 
+  final bool isOfflineMode;
+
   @override
   String toString() {
-    return 'TreeSurveyFormRouteArgs{key: $key, projectId: $projectId, latitude: $latitude, longitude: $longitude}';
+    return 'TreeSurveyFormRouteArgs{key: $key, projectId: $projectId, latitude: $latitude, longitude: $longitude, isOfflineMode: $isOfflineMode}';
   }
 
   @override
@@ -245,7 +314,8 @@ class TreeSurveyFormRouteArgs {
     return key == other.key &&
         projectId == other.projectId &&
         latitude == other.latitude &&
-        longitude == other.longitude;
+        longitude == other.longitude &&
+        isOfflineMode == other.isOfflineMode;
   }
 
   @override
@@ -253,7 +323,8 @@ class TreeSurveyFormRouteArgs {
       key.hashCode ^
       projectId.hashCode ^
       latitude.hashCode ^
-      longitude.hashCode;
+      longitude.hashCode ^
+      isOfflineMode.hashCode;
 }
 
 /// generated route for

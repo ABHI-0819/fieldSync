@@ -13,11 +13,13 @@ import '../../../common/models/response.mode.dart';
 import '../../../common/repository/login_repository.dart';
 import '../../../common/widgets/app_version_text.dart';
 import '../../../core/config/constants/space.dart';
+import '../../../core/config/resources/images.dart';
 import '../../../core/config/route/app_route.dart';
 import '../../../core/config/themes/app_color.dart';
 import '../../../core/config/themes/app_fonts.dart';
 import '../../../core/storage/preference_keys.dart';
 import '../../../core/storage/secure_storage.dart';
+import '../../sync/screens/offline_projects_screen.dart';
 import '../bloc/auth_bloc.dart';
 import '../models/login_request_model.dart';
 import '../models/login_response_model.dart';
@@ -112,6 +114,7 @@ class _LoginScreenState extends State<LoginScreen>
       create: (context) => _authBloc,
       child: Scaffold(
         backgroundColor: AppColor.background,
+        resizeToAvoidBottomInset: false,
         body:
             BlocListener<AuthBloc, ApiState<LoginResponseModel, ResponseModel>>(
           listener: (context, state) {
@@ -151,52 +154,54 @@ class _LoginScreenState extends State<LoginScreen>
               );
             }
           },
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height,
-              child: Stack(
-                children: [
-                  // Background decorative elements
-                  _buildBackgroundDecoration(),
-                  // Main content
-                  FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: SafeArea(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20.w),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Top spacer for visual breathing room
-                              SizedBox(height: Spacing.xxLarge.h),
-                              // Logo and header section
-                              _buildHeaderSection(),
-                              SizedBox(height: 20.h),
-                              // Space before form
-                              SizedBox(height: Spacing.large.h),
-                              // Login form card
-                              _buildLoginForm(),
-                              // Push footer to bottom
-                              // const Spacer(),
-                              SizedBox(height: 60.h),
-                              // Footer section
-                              _buildFooter(),
-                              // Bottom safe padding
-                            ],
+          child: GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight,
+                  ),
+                  child: IntrinsicHeight(
+                    child: Stack(
+                      children: [
+                        // Background decorative elements
+                        Positioned.fill(child: _buildBackgroundDecoration()),
+                        // Main content
+                        FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: SlideTransition(
+                            position: _slideAnimation,
+                            child: SafeArea(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  spacing: 20.h,
+                                  children: [
+                                    SizedBox(height: 20.h),
+                                    _buildHeaderSection(),
+                                    _buildLoginForm(),
+                                    _buildFooter(),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
         ),
       ),
+    ),
     );
   }
 
@@ -282,8 +287,8 @@ class _LoginScreenState extends State<LoginScreen>
       children: [
         // Logo container with shadow
         Center(
-          child: Image.network(
-            'https://sikasolutions.in/images/sikalogo.png',
+          child: Image.asset(
+            Images.sikalogo,
             width: 120,
           ),
         ),
@@ -340,6 +345,7 @@ class _LoginScreenState extends State<LoginScreen>
             hintText: 'Enter your email address',
             prefixIcon: Icons.email_outlined,
             inputType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
           ),
 
           SizedBox(height: Spacing.medium.h),
@@ -352,6 +358,8 @@ class _LoginScreenState extends State<LoginScreen>
             prefixIcon: Icons.lock_outline,
             inputType: TextInputType.visiblePassword,
             isPassword: true,
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: () => login(context: context),
           ),
 
           SizedBox(height: Spacing.small.h),
@@ -421,6 +429,11 @@ class _LoginScreenState extends State<LoginScreen>
 
           // Login button
           _buildModernButton(),
+
+          SizedBox(height: Spacing.medium.h),
+
+          // Offline mode button
+          _buildOfflineButton(),
         ],
       ),
     );
@@ -433,6 +446,8 @@ class _LoginScreenState extends State<LoginScreen>
     required IconData prefixIcon,
     required TextInputType inputType,
     bool isPassword = false,
+    TextInputAction? textInputAction,
+    VoidCallback? onFieldSubmitted,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -458,6 +473,8 @@ class _LoginScreenState extends State<LoginScreen>
           child: TextField(
             controller: controller,
             keyboardType: inputType,
+            textInputAction: textInputAction,
+            onSubmitted: (_) => onFieldSubmitted?.call(),
             obscureText: isPassword && !_isPasswordVisible,
             style: AppFonts.regular.copyWith(
               color: AppColor.textPrimary,
@@ -546,6 +563,57 @@ class _LoginScreenState extends State<LoginScreen>
                   Icons.arrow_forward_rounded,
                   color: AppColor.white,
                   size: 20.sp,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOfflineButton() {
+    return Container(
+      height: 50.h,
+      decoration: BoxDecoration(
+        color: AppColor.white,
+        border: Border.all(color: AppColor.primary, width: 1.5),
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColor.primary.withOpacity(0.05),
+            spreadRadius: 0,
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            // Navigate to offline projects
+            context.router.push(OfflineProjectsRoute());
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.wifi_off_rounded,
+                  color: AppColor.primary,
+                  size: 20.sp,
+                ),
+                SizedBox(width: Spacing.small.w),
+                Text(
+                  'Start Offline',
+                  style: AppFonts.regular.copyWith(
+                    color: AppColor.primary,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ],
             ),

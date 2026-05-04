@@ -5,6 +5,8 @@ import 'package:fieldsync/features/project/bloc/project_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import '../../../core/storage/hive_setup.dart';
 
 import '../../../common/bloc/api_event.dart';
 import '../../../common/bloc/api_state.dart';
@@ -180,7 +182,69 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     ),
                   ),
 
-                  SizedBox(width: 40),
+                  // Offline Sync Button
+                  ValueListenableBuilder(
+                      valueListenable: HiveSetup.projectsBox.listenable(),
+                      builder: (context, box, _) {
+                        final isDownloaded = box.containsKey(widget.projectId);
+                        return Container(
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: isDownloaded
+                                ? Colors.green.withOpacity(0.08)
+                                : AppColor.primary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isDownloaded
+                                  ? Colors.green.withOpacity(0.2)
+                                  : AppColor.primary.withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(20),
+                              onTap: isDownloaded
+                                  ? null
+                                  : () => context.router.push(
+                                      ResourceSyncRoute(
+                                          projectId: widget.projectId)),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 4),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      isDownloaded
+                                          ? Icons.cloud_done_rounded
+                                          : Icons.cloud_download_outlined,
+                                      color: isDownloaded
+                                          ? Colors.green
+                                          : AppColor.primary,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      isDownloaded ? 'Offline' : 'Go Offline',
+                                      style: TextStyle(
+                                        color: isDownloaded
+                                            ? Colors.green
+                                            : AppColor.primary,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                
                 ],
               ),
             ),
@@ -444,9 +508,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         ),
       ),
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.transparent,
+          color: AppColor.white,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),

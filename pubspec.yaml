@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.5+6
+version: 1.0.6+7
 
 environment:
   sdk: ^3.6.0
@@ -53,13 +53,18 @@ dependencies:
   shimmer: ^3.0.0
   geojson_vi: ^2.2.5
   image_picker: ^1.2.0
-
   auto_route: ^10.1.0
-
   package_info_plus: ^9.0.0
-
   url_launcher: ^6.3.2
   cached_network_image: ^3.4.1
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.2
+  equatable: ^2.0.8
+  intl: ^0.19.0
+  flutter_map_tile_caching: ^10.1.0
+  uuid: ^4.5.1
+  path: ^1.9.0
 
 
 
@@ -77,9 +82,11 @@ dev_dependencies:
   flutter_native_splash: ^2.4.4
   flutter_launcher_icons: ^0.14.4
 
-  auto_route_generator: ^10.0.0
+  auto_route_generator: ">=10.0.0 <10.2.4"
 
   build_runner: ^2.4.10
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.5
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

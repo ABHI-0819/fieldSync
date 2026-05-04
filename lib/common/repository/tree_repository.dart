@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import '../../features/sync/models/sync_response_model.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../core/network/api_service.dart';
 import '../../core/network/base_network.dart';
@@ -87,6 +89,29 @@ class TreeRepository {
       "Delete Tree Survey Status: ${result.status}",
       name: "TreeRepository",
     );
+    return result;
+  }
+
+  /// Bulk sync offline surveys with multipart/form-data
+  Future<ApiResult<SyncResponseList, ResponseModel>> bulkSyncSurveys({
+    required List<Map<String, dynamic>> surveys,
+    required List<String> imagePaths,
+  }) async {
+    final result = await _api.upload<SyncResponseList>(
+      path: ApiEndpoints.syncSurveys,
+      fields: {
+        "records": jsonEncode(surveys),
+      },
+      filePaths: imagePaths,
+      fileKey: "images",
+      parser: (str) => SyncResponseList.fromJson(json.decode(str)),
+    );
+
+    debugLog(
+      "Bulk Sync Status: ${result.status}",
+      name: "TreeRepository",
+    );
+
     return result;
   }
 }

@@ -1,9 +1,11 @@
+import 'package:geolocator/geolocator.dart';
+
 abstract class LocationEvent {}
 
 class StartLocationTracking extends LocationEvent {}
 
 class LocationUpdated extends LocationEvent {
-  final double accuracy;
+  final Position position;
 
-  LocationUpdated(this.accuracy);
+  LocationUpdated(this.position);
 }

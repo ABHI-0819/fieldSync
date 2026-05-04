@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../maps/screens/map_screen.dart';
+import '../../sync/widgets/sync_summary_bottom_sheet.dart';
+import '../../authentication/screens/login_screen.dart';
 import '../../../common/bloc/api_event.dart';
 import '../../../common/models/response.mode.dart';
 import '../../../common/repository/dashboard_repository.dart';
@@ -317,15 +320,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ),
                 const SizedBox(height: 3),
-                 Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColor.textSecondary,
-                    ),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColor.textSecondary,
                   ),
-             
+                ),
               ],
             ),
           ),
@@ -360,15 +362,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
         const SizedBox(height: 10),
         _buildActionButton(
-          icon: Icons.cloud_off_outlined,
-          label: 'Offline Survey',
-          subtitle: 'Survey without internet',
+          icon: Icons.sync,
+          label: 'Sync Offline Data',
+          subtitle: 'Upload pending offline surveys',
           onTap: () {
-            context.router.push(UnderDevelopmentRoute(
-              featureName: 'Offline Survey',
-              message:
-                  'This feature is under development. Stay tuned for updates!',
-            ));
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => const SyncSummaryBottomSheet(),
+            );
           },
           color: AppColor.cardBackground,
           isGradient: false,

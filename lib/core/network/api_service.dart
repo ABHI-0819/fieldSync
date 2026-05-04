@@ -20,6 +20,44 @@ class ApiService {
     bool skipAuth = false,
     required T Function(String) parser,
   }) async {
+    // Perform the first upload attempt
+    final result = await _performUpload<T>(
+      path: path,
+      fields: fields,
+      filePaths: filePaths,
+      fileKey: fileKey,
+      skipAuth: skipAuth,
+      parser: parser,
+    );
+
+    // If it fails with 401 Unauthorized, the token was likely refreshed by the interceptor
+    // but the retry failed (common with FormData/Multipart requests).
+    // Re-creating the FormData for a second attempt will use the new fresh token.
+    if (result.status == ApiStatus.unAuthorized && !skipAuth) {
+      debugLog('Detected 401 on upload. Retrying with fresh token...',
+          name: 'ApiService');
+      return _performUpload<T>(
+        path: path,
+        fields: fields,
+        filePaths: filePaths,
+        fileKey: fileKey,
+        skipAuth: skipAuth,
+        parser: parser,
+      );
+    }
+
+    return result;
+  }
+
+  /// Internal method to perform the actual upload
+  Future<ApiResult<T, ResponseModel>> _performUpload<T>({
+    required String path,
+    required Map<String, dynamic> fields,
+    required List<String> filePaths,
+    required String fileKey,
+    required bool skipAuth,
+    required T Function(String) parser,
+  }) async {
     try {
       final response = await _client.upload(
         path,
@@ -156,9 +194,7 @@ class ApiService {
               message: e.response?.data['message'] ?? 'Unknown error',
               data: e.response?.data['data'] ?? '',
             ),
-            ApiStatus
-                .failed // Cast to T (works because ResponseModel is your base)
-            );
+            status);
       } else {
         return ApiResult.error(
             ResponseModel(

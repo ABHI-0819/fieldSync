@@ -9,13 +9,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart' as latlng;
 import 'package:turf/turf.dart' as turf;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:typed_data';
+import 'dart:math';
 import '../../../common/bloc/api_state.dart';
+import '../../../common/bloc/location_bloc.dart';
+import '../../../common/bloc/location_state.dart';
 import '../../../common/models/response.mode.dart';
 import '../../../common/screens/tree_marker_bottomsheet.dart';
 import '../../../common/widgets/delete_confirmation.dart';
@@ -26,16 +31,27 @@ import '../../../core/config/constants/space.dart';
 import '../../../core/config/resources/images.dart';
 import '../../../core/config/themes/app_color.dart';
 import '../../../core/config/themes/app_fonts.dart';
+import '../../../core/storage/hive_setup.dart';
 import '../../../core/utils/geofence_helper.dart';
+import '../../../core/utils/logger.dart';
 import '../../project/models/project_detail_response_model.dart';
 import '../../survey/bloc/tree_survey_bloc.dart';
 import '../../survey/models/tree_survey_list_model.dart';
+import '../../../common/screens/offline_tree_marker_bottomsheet.dart';
+import '../../sync/models/offline_tree_survey.dart';
+import '../../sync/models/offline_tree_survey.dart';
 
 @RoutePage()
 class MapScreen extends StatefulWidget {
   static const route = '/map';
   final String projectId;
-  const MapScreen({Key? key, required this.projectId}) : super(key: key);
+  final bool isOfflineMode;
+
+  const MapScreen({
+    super.key,
+    required this.projectId,
+    this.isOfflineMode = false,
+  });
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -51,11 +67,14 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   String _currentLayer = 'OpenStreetMap';
   double _currentZoom = 13.0;
   latlng.LatLng? _currentPosition;
+  bool _isMapReady = false;
   double? _gpsAccuracy;
   bool _isLocating = false;
 
   // Draggable target (center of map)
   latlng.LatLng? _selectedLocation; // This will be updated on map move
+  List<latlng.LatLng>? _offlinePolygonPoints;
+  LatLngBounds? _offlineBounds;
 
   // Tree markers for clustering (optional)
   List<Marker> _treeMarkers = [];
@@ -103,9 +122,51 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     treeSurveyDeleteBloc = SurveyDeleteBLoc(
       TreeRepository(),
     );
-    projectDetailBloc.add(ApiFetch(projectId: widget.projectId));
-    treeSurveyedBloc.add(ApiFetch(projectId: widget.projectId));
+
+    if (widget.isOfflineMode) {
+      _loadOfflineProject();
+    } else {
+      projectDetailBloc.add(ApiFetch(projectId: widget.projectId));
+      treeSurveyedBloc.add(ApiFetch(projectId: widget.projectId));
+    }
     _getCurrentLocation();
+  }
+
+  void _loadOfflineProject() {
+    final offlineProject = HiveSetup.projectsBox.get(widget.projectId);
+    if (offlineProject != null && offlineProject.polygonData != null) {
+      final points = offlineProject.polygonData!
+          .map((p) => latlng.LatLng(p[0], p[1]))
+          .toList();
+
+      _offlinePolygonPoints = points;
+      if (points.isNotEmpty) {
+        final rawBounds = LatLngBounds.fromPoints(points);
+        // Ensure a minimum buffer of ~5km (0.05 degrees) so CameraConstraint doesn't crash on small projects
+        final latBuffer = max((rawBounds.north - rawBounds.south) * 0.1, 0.05);
+        final lngBuffer = max((rawBounds.east - rawBounds.west) * 0.1, 0.05);
+
+        _offlineBounds = LatLngBounds(
+          latlng.LatLng(
+              rawBounds.south - latBuffer, rawBounds.west - lngBuffer),
+          latlng.LatLng(
+              rawBounds.north + latBuffer, rawBounds.east + lngBuffer),
+        );
+
+        _selectedLocation = points.first;
+        _currentPosition = points.first;
+      }
+
+      setState(() {});
+
+      if (points.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _mapController.move(points.first, _currentZoom);
+          }
+        });
+      }
+    }
   }
 
   @override
@@ -116,6 +177,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _getCurrentLocation() async {
+    if (!mounted) return;
     setState(() => _isLocating = true);
 
     try {
@@ -139,25 +201,52 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         return;
       }
 
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 8),
+        );
+      } catch (e) {
+        position = await Geolocator.getLastKnownPosition();
+      }
+
+      if (!mounted) return;
+
+      if (position == null) {
+        _showLocationError('Could not determine location');
+        return;
+      }
 
       setState(() {
-        _currentPosition = latlng.LatLng(position.latitude, position.longitude);
+        _currentPosition =
+            latlng.LatLng(position!.latitude, position.longitude);
         _gpsAccuracy = position.accuracy;
         _isLocating = false;
         _selectedLocation = _currentPosition; // Set initial target
       });
 
-      // Move map to current location
-      _mapController.move(_currentPosition!, _currentZoom);
+      // Move map to current location (ONLY if not in offline mode or if we specifically want to)
+      if (!widget.isOfflineMode) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _currentPosition != null) {
+            try {
+              _mapController.move(_currentPosition!, _currentZoom);
+            } catch (e) {
+              debugLog('Failed to move map: $e', name: 'MapScreen');
+            }
+          }
+        });
+      }
     } catch (e) {
-      _showLocationError('Failed to get location: ${e.toString()}');
+      if (mounted) {
+        _showLocationError('Failed to get location: ${e.toString()}');
+      }
     }
   }
 
   void _showLocationError(String message) {
+    if (!mounted) return;
     setState(() => _isLocating = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -241,9 +330,28 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     }
 
     // CASE 2: Polygon exists → validate
-    final polygonCoords = [
-      polygonLatLngs.map((p) => turf.Position(p.longitude, p.latitude)).toList()
-    ];
+    final List<List<turf.Position>> polygonCoords;
+    if (widget.isOfflineMode) {
+      if (_offlinePolygonPoints == null || _offlinePolygonPoints!.isEmpty) {
+        _navigateToSurvey(selected);
+        return;
+      }
+      polygonCoords = [
+        _offlinePolygonPoints!
+            .map((p) => turf.Position(p.longitude, p.latitude))
+            .toList()
+      ];
+    } else {
+      if (polygonLatLngs == null || polygonLatLngs.isEmpty) {
+        _navigateToSurvey(selected);
+        return;
+      }
+      polygonCoords = [
+        polygonLatLngs
+            .map((p) => turf.Position(p.longitude, p.latitude))
+            .toList()
+      ];
+    }
 
     final bool isInside = isPointInsidePolygon(
       latitude: selected.latitude,
@@ -270,6 +378,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       TreeSurveyFormRoute(
         latitude: selected.latitude,
         longitude: selected.longitude,
+        isOfflineMode: widget.isOfflineMode,
         projectId: widget.projectId,
       ),
     )
@@ -345,6 +454,20 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }*/
 
   List<Widget> buildProjectMapLayers(BuildContext context) {
+    if (widget.isOfflineMode && _offlinePolygonPoints != null) {
+      return [
+        PolygonLayer(
+          polygons: [
+            Polygon(
+              points: _offlinePolygonPoints!,
+              color: Colors.green.withOpacity(0.1),
+              borderStrokeWidth: 2,
+              borderColor: Colors.green,
+            ),
+          ],
+        )
+      ];
+    }
     return [
       BlocConsumer<ProjectDetailBloc,
           ApiState<ProjectDetailResponse, ResponseModel>>(
@@ -395,23 +518,66 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }
 
   List<Widget> buildTreesMapLayer(BuildContext context) {
+    if (widget.isOfflineMode) {
+      final offlineTrees = HiveSetup.surveysBox.values
+          .where((tree) => tree.project == widget.projectId)
+          .toList();
+
+      final markers = offlineTrees
+          .where((tree) => tree.latitude != null && tree.longitude != null)
+          .map((tree) {
+        final point = latlng.LatLng(tree.latitude, tree.longitude);
+
+        return Marker(
+          point: point,
+          width: 40,
+          height: 40,
+          rotate: true,
+          child: GestureDetector(
+            onTap: () {
+              _showOfflineTreeDetails(context, tree);
+            },
+            child: SvgPicture.asset(
+              Images.markerIcon,
+            ),
+          ),
+        );
+      }).toList();
+
+      if (markers.isEmpty) {
+        return const [SizedBox.shrink()];
+      }
+
+      return [
+        MarkerClusterLayerWidget(
+          options: MarkerClusterLayerOptions(
+            maxClusterRadius: 45,
+            size: const Size(42, 42),
+            padding: const EdgeInsets.all(8),
+            maxZoom: 20,
+            markers: markers,
+            rotate: true,
+            builder: (context, markers) {
+              return _buildClusterWidget(markers.length.toString());
+            },
+          ),
+        )
+      ];
+    }
+
     return [
       BlocBuilder<TreeSurveyedBloc,
           ApiState<TreeSurveyResponseList, ResponseModel>>(
         builder: (context, state) {
-          // If loading or error, return nothing for the map children.
-          // (If you want an overlay spinner, show it outside the map)
           if (state is! ApiSuccess<TreeSurveyResponseList, ResponseModel>) {
             return const SizedBox.shrink();
           }
 
           final treeData = state.data.data;
 
-          // Build markers only for items that have a valid LatLng
           final markers = treeData
               .where((tree) => tree.location?.latLng != null)
               .map((tree) {
-            // Convert model LatLng (LatLng from package:latlong2) to the alias used by your map
             final modelLatLng = tree.location!.latLng!;
             final point =
                 latlng.LatLng(modelLatLng.latitude, modelLatLng.longitude);
@@ -421,83 +587,103 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               width: 40,
               height: 40,
               rotate: true,
-              // Marker requires `child`
               child: GestureDetector(
                 onTap: () {
                   showTreeDetails(context, tree);
-                  // Replace with your bottom sheet / details UI
-                  // ScaffoldMessenger.of(context).showSnackBar(
-                  //   SnackBar(content: Text(tree.speciesName.isNotEmpty ? tree.speciesName : 'Unknown')),
-                  // );
                 },
                 child: SvgPicture.asset(Images.markerIcon),
               ),
             );
           }).toList();
 
-          // If no markers, return empty widget (no cluster)
           if (markers.isEmpty) {
             return const SizedBox.shrink();
           }
 
-          // Marker cluster layer
           return MarkerClusterLayerWidget(
             options: MarkerClusterLayerOptions(
               maxClusterRadius: 45,
               size: const Size(42, 42),
-              // cluster padding (outer)
               padding: const EdgeInsets.all(8),
               maxZoom: 20,
               markers: markers,
               rotate: true,
-              // builder for cluster widget (shows number)
               builder: (context, markers) {
-                return Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle, // Circular marker
-                    gradient: LinearGradient(
-                      colors: [AppColor.primaryLight, AppColor.primary],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                    border: Border.all(
-                      color: AppColor.secondaryLight,
-                      width: 2,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      markers.length.toString(),
-                      style: const TextStyle(
-                        color: AppColor.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black26,
-                            blurRadius: 2,
-                            offset: Offset(0, 1),
-                          )
-                        ],
-                      ),
-                    ),
-                  ),
-                );
+                return _buildClusterWidget(markers.length.toString());
               },
             ),
           );
         },
       ),
     ];
+  }
+
+  Widget _buildClusterWidget(String count) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [AppColor.primaryLight, AppColor.primary],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        border: Border.all(
+          color: AppColor.secondaryLight,
+          width: 2,
+        ),
+      ),
+      child: Center(
+        child: Text(
+          count,
+          style: const TextStyle(
+            color: AppColor.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            shadows: [
+              Shadow(
+                color: Colors.black26,
+                blurRadius: 2,
+                offset: Offset(0, 1),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showOfflineTreeDetails(BuildContext context, OfflineTreeSurvey tree) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => OfflineTreeMarkerBottomSheet(
+        tree: tree,
+        onDelete: () async {
+          final confirmed = await showDeleteConfirmationDialog(
+            context: context,
+            title: 'Delete Offline Record?',
+            description: 'This record will be removed from your device.',
+          );
+          if (confirmed == true) {
+            await tree.delete();
+            if (context.mounted) {
+              Navigator.pop(context);
+              setState(() {}); // Refresh map
+            }
+          }
+        },
+      ),
+    );
   }
 
   void showTreeDetails(BuildContext context, TreeSurveyData treeData) {
@@ -601,30 +787,31 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                     ),
 
                     // Layer selector button
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Colors.blue.shade100,
-                          width: 0.5,
-                        ),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
+                    if (!widget.isOfflineMode)
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
                           borderRadius: BorderRadius.circular(14),
-                          onTap: _showLayerSelector,
-                          child: Icon(
-                            Icons.layers_rounded,
-                            color: Colors.blue.shade600,
-                            size: 20,
+                          border: Border.all(
+                            color: Colors.blue.shade100,
+                            width: 0.5,
+                          ),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(14),
+                            onTap: _showLayerSelector,
+                            child: Icon(
+                              Icons.layers_rounded,
+                              color: Colors.blue.shade600,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -650,42 +837,207 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             FlutterMap(
               mapController: _mapController,
               options: MapOptions(
-                initialCenter:
-                    _currentPosition ?? const latlng.LatLng(19.0760, 72.8777),
-                initialZoom: _currentZoom,
-                minZoom: 3,
-                maxZoom: 20,
-                // 👇 Listen to map movement to update target location
+                initialCenter: (widget.isOfflineMode && _offlineBounds != null)
+                    ? _offlineBounds!.center
+                    : (_currentPosition ??
+                        const latlng.LatLng(19.0760, 72.8777)),
+                initialZoom: widget.isOfflineMode ? 14 : _currentZoom,
+                minZoom: 5,
+                maxZoom: 22,
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.all,
+                  enableMultiFingerGestureRace: true,
+                ),
                 onPositionChanged: (position, hasGesture) {
                   _currentZoom = position.zoom ?? _currentZoom;
-                  _onMapMoved(position); // Update selected location
+                  _onMapMoved(position);
+                },
+                backgroundColor: Colors.white,
+                cameraConstraint: (widget.isOfflineMode &&
+                        _offlineBounds != null &&
+                        _isMapReady)
+                    ? CameraConstraint.contain(bounds: _offlineBounds!)
+                    : CameraConstraint.unconstrained(),
+                onMapReady: () {
+                  if (widget.isOfflineMode && _offlineBounds != null) {
+                    try {
+                      _mapController.move(_offlineBounds!.center, 14);
+                    } catch (e) {
+                      debugLog('Failed to move map on ready: $e',
+                          name: 'MapScreen');
+                    }
+                  }
+                  if (mounted) {
+                    setState(() {
+                      _isMapReady = true;
+                      _selectedLocation = _mapController.camera.center;
+                    });
+                  }
                 },
               ),
               children: [
                 // Base layer
-                _baseLayers[_currentLayer]!,
+                TileLayer(
+                  urlTemplate: _baseLayers[_currentLayer]?.urlTemplate ??
+                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  subdomains: _baseLayers[_currentLayer]?.subdomains ?? [],
+                  userAgentPackageName: 'com.fieldsync.app',
+                  tileProvider: widget.isOfflineMode
+                      ? FMTCTileProvider(
+                          stores: {
+                            widget.projectId: BrowseStoreStrategy.read,
+                          },
+                          loadingStrategy: BrowseLoadingStrategy.cacheOnly,
+                          headers: {
+                            'User-Agent':
+                                'FieldSync/1.0 (https://fieldSync.com)',
+                          },
+                          errorHandler: (error) {
+                            // Return a 1x1 transparent PNG to silently handle missing tiles
+                            return Uint8List.fromList([
+                              0x89,
+                              0x50,
+                              0x4E,
+                              0x47,
+                              0x0D,
+                              0x0A,
+                              0x1A,
+                              0x0A,
+                              0x00,
+                              0x00,
+                              0x00,
+                              0x0D,
+                              0x49,
+                              0x48,
+                              0x44,
+                              0x52,
+                              0x00,
+                              0x00,
+                              0x00,
+                              0x01,
+                              0x00,
+                              0x00,
+                              0x00,
+                              0x01,
+                              0x08,
+                              0x06,
+                              0x00,
+                              0x00,
+                              0x00,
+                              0x1F,
+                              0x15,
+                              0xC4,
+                              0x89,
+                              0x00,
+                              0x00,
+                              0x00,
+                              0x0A,
+                              0x49,
+                              0x44,
+                              0x41,
+                              0x54,
+                              0x78,
+                              0x9C,
+                              0x63,
+                              0x00,
+                              0x01,
+                              0x00,
+                              0x00,
+                              0x05,
+                              0x00,
+                              0x01,
+                              0x0D,
+                              0x0A,
+                              0x2D,
+                              0xB4,
+                              0x00,
+                              0x00,
+                              0x00,
+                              0x00,
+                              0x49,
+                              0x45,
+                              0x4E,
+                              0x44,
+                              0xAE,
+                              0x42,
+                              0x60,
+                              0x82,
+                            ]);
+                          },
+                        )
+                      : NetworkTileProvider(
+                          headers: {
+                            'User-Agent':
+                                'FieldSync/1.0 (https://fieldSync.com)',
+                          },
+                        ),
+                ),
                 ...buildProjectMapLayers(context),
-                // Current location marker (optional)
-                if (_currentPosition != null) CurrentLocationLayer(),
+                // Current location marker (custom to prevent offline stream null errors)
+                if (widget.isOfflineMode)
+                  BlocBuilder<LocationBloc, LocationState>(
+                    builder: (context, state) {
+                      // Fallback to _currentPosition if live position isn't available yet
+                      final livePos = state.position;
+                      final latlngPos = livePos != null
+                          ? latlng.LatLng(livePos.latitude, livePos.longitude)
+                          : _currentPosition;
+
+                      if (latlngPos == null) return const SizedBox.shrink();
+
+                      return MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: latlngPos,
+                            width: 48,
+                            height: 48,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Container(
+                                  width: 18,
+                                  height: 18,
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade700,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: Colors.white, width: 3),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        blurRadius: 4,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  )
+                else
+                  CurrentLocationLayer(),
 
                 // Tree markers with clustering
                 ...buildTreesMapLayer(context),
-
-                //  CENTERED TARGET ICON (crosshair) - always centered
-                MarkerLayer(
-                  rotate: true,
-                  markers: [
-                    Marker(
-                      point: _selectedLocation ??
-                          _currentPosition ??
-                          const latlng.LatLng(0, 0),
-                      width: 55,
-                      height: 55,
-                      child: SvgPicture.asset(Images.aimIcon),
-                    ),
-                  ],
-                ),
               ],
+            ),
+
+            //  CENTERED TARGET ICON (crosshair) - fixed in screen center
+            Center(
+              child: IgnorePointer(
+                child: SvgPicture.asset(
+                  Images.aimIcon,
+                  width: 55,
+                  height: 55,
+                ),
+              ),
             ),
 
             // GPS Accuracy indicator

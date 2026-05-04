@@ -27,7 +27,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
         distanceFilter: 0,
       ),
     ).listen((position) {
-      add(LocationUpdated(position.accuracy));
+      add(LocationUpdated(position));
     });
   }
 
@@ -35,7 +35,10 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
     LocationUpdated event,
     Emitter<LocationState> emit,
   ) {
-    emit(state.copyWith(accuracy: event.accuracy));
+    emit(state.copyWith(
+      accuracy: event.position.accuracy,
+      position: event.position,
+    ));
   }
 
   @override

@@ -8,6 +8,9 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_icon_snackbar/flutter_icon_snackbar.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../common/bloc/api_event.dart';
 import '../../../common/bloc/api_state.dart';
@@ -22,6 +25,8 @@ import '../bloc/tree_species_bloc.dart';
 import '../bloc/tree_survey_bloc.dart';
 import '../models/tree_request_model.dart';
 import '../models/tree_species_response_model.dart';
+import '../../../core/storage/hive_setup.dart';
+import '../../sync/models/offline_tree_survey.dart';
 
 // Models
 class TreeSpecies {
@@ -42,6 +47,7 @@ class TreeSurveyFormScreen extends StatefulWidget {
   final String projectId;
   final double latitude;
   final double longitude;
+  final bool isOfflineMode;
   static const route = '/TreeSurveyForm';
 
   const TreeSurveyFormScreen({
@@ -49,6 +55,7 @@ class TreeSurveyFormScreen extends StatefulWidget {
     required this.projectId,
     required this.latitude,
     required this.longitude,
+    this.isOfflineMode = false,
   });
 
   @override
@@ -84,12 +91,14 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
 
   // Images
   List<File> _selectedImages = [];
+  late String _formUuid;
 
   late TreeSurveyBloc _treeSurveyBloc;
 
   @override
   void initState() {
     super.initState();
+    _formUuid = const Uuid().v4();
     _treeSurveyBloc = TreeSurveyBloc(
       TreeRepository(),
     );
@@ -116,6 +125,7 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => SpeciesSearchBottomSheet(
+        isOfflineMode: widget.isOfflineMode,
         onSpeciesSelected: (species) {
           setState(() {
             _selectedSpecies = species;
@@ -130,13 +140,30 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
     try {
       final XFile? image = await picker.pickImage(source: source);
       if (image != null) {
+        // Get application directory to store images locally
+        final appDir = await getApplicationDocumentsDirectory();
+        final photosDir = Directory(p.join(appDir.path, 'tree_photos'));
+
+        if (!await photosDir.exists()) {
+          await photosDir.create(recursive: true);
+        }
+
+        // Generate unique name: clientUuid_serialNo.extension
+        final String extension = p.extension(image.path);
+        final int serialNo = _selectedImages.length + 1;
+        final String newFileName = '${_formUuid}_$serialNo$extension';
+        final String newPath = p.join(photosDir.path, newFileName);
+
+        // Copy image to the new location with the formatted name
+        final File savedImage = await File(image.path).copy(newPath);
+
         setState(() {
-          _selectedImages.add(File(image.path));
+          _selectedImages.add(savedImage);
         });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick image: $e')),
+        SnackBar(content: Text('Failed to save image: $e')),
       );
     }
   }
@@ -221,13 +248,47 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
         remark: _remarkController.text.trim(),
         fieldOfficer: _fieldOfficerController.text.trim(),
       );
-      _treeSurveyBloc.add(
-        AddTreeSurvey(
-          request: request,
-          images: _selectedImages,
-        ),
-      );
-      // Navigator.pop(context);
+      if (widget.isOfflineMode) {
+        // Save locally to Hive
+        final offlineSurvey = OfflineTreeSurvey(
+          id: _formUuid, // Use pre-generated stable UUID
+          surveyedAt: DateTime.now(), // Device clock time
+          project: widget.projectId,
+          species: _selectedSpecies!.id,
+          latitude: widget.latitude,
+          longitude: widget.longitude,
+          height: _heightController.text.trim(),
+          girth: _girthController.text.trim(),
+          healthStatus: _selectedHealthStatus!,
+          ownership: _ownershipController.text.trim(),
+          canopyDiameter: _canopyDiameterController.text.trim(),
+          estimatedAge: int.tryParse(_estimatedAgeController.text.trim()),
+          soilType: _soilTypeController.text.trim(),
+          siteQuality: _selectedSiteQuality,
+          threats: _threatsController.text.trim(),
+          damageSeverity: _selectedDamageSeverity,
+          imagePaths: _selectedImages.map((f) => f.path).toList(),
+          remark: _remarkController.text.trim(),
+          fieldOfficer: _fieldOfficerController.text.trim(),
+          isSynced: false,
+        );
+        HiveSetup.surveysBox.put(offlineSurvey.id, offlineSurvey);
+        IconSnackBar.show(
+          context,
+          snackBarType: SnackBarType.success,
+          label: 'Survey saved offline successfully!',
+          backgroundColor: Colors.green,
+          iconColor: Colors.white,
+        );
+        context.router.pop(widget.projectId);
+      } else {
+        _treeSurveyBloc.add(
+          AddTreeSurvey(
+            request: request,
+            images: _selectedImages,
+          ),
+        );
+      }
     }
   }
 
@@ -235,6 +296,7 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColor.background,
+      resizeToAvoidBottomInset: false,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(60),
         child: Container(
@@ -320,7 +382,7 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
                 backgroundColor: Colors.green,
                 iconColor: Colors.white,
               );
-               context.router.pop(widget.projectId);
+              context.router.pop(widget.projectId);
               // success
             } else if (state
                 is ApiFailure<SuccessResponseModel, ResponseModel>) {
@@ -2480,10 +2542,12 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
 
 class SpeciesSearchBottomSheet extends StatefulWidget {
   final Function(TreeSpecies) onSpeciesSelected;
+  final bool isOfflineMode;
 
   const SpeciesSearchBottomSheet({
     Key? key,
     required this.onSpeciesSelected,
+    this.isOfflineMode = false,
   }) : super(key: key);
 
   @override
@@ -2503,7 +2567,28 @@ class _SpeciesSearchBottomSheetState extends State<SpeciesSearchBottomSheet> {
     _speciesBloc = TreeSpeciesBloc(
       TreeRepository(),
     );
-    _speciesBloc.add(ApiFetch());
+
+    if (widget.isOfflineMode) {
+      _loadOfflineSpecies();
+    } else {
+      _speciesBloc.add(ApiFetch());
+    }
+  }
+
+  void _loadOfflineSpecies() {
+    final offlineSpecies = HiveSetup.speciesBox.values.toList();
+    final uiSpecies = offlineSpecies
+        .map((s) => TreeSpecies(
+              id: s.id,
+              name: s.name,
+              scientificName: s.scientificName,
+            ))
+        .toList();
+
+    setState(() {
+      _allSpecies = uiSpecies;
+      _filteredSpecies = uiSpecies;
+    });
   }
 
   @override
