@@ -180,6 +180,53 @@ class TreeSurveyRequest {
 
     return fields;
   }
+
+  /// ✅ Centralized validation matching backend logic
+  String? validate() {
+    final double? h = double.tryParse(height);
+    final double? g = double.tryParse(girth);
+    final double? cd = canopyDiameter != null && canopyDiameter!.isNotEmpty
+        ? double.tryParse(canopyDiameter!)
+        : null;
+
+    // 1. Height range check: [0.1, 200.0]
+    if (h == null) return "Invalid height value";
+    if (h < 0.1 || h > 200.0) {
+      return "Height must be between 0.1 and 200.0 meters";
+    }
+
+    // 2. Girth range check: [0.01, 20.0]
+    if (g == null) return "Invalid girth value";
+    if (g < 0.01 || g > 20.0) {
+      return "Girth must be between 0.01 and 20.0 meters";
+    }
+
+    // 3. Canopy diameter range check: [0.1, 100.0]
+    if (cd != null) {
+      if (cd < 0.1 || cd > 100.0) {
+        return "Canopy diameter must be between 0.1 and 100.0 meters";
+      }
+    }
+
+    // 4. Image count check: Max 5
+    if (images.length > 5) {
+      return "Maximum 5 images allowed per survey";
+    }
+
+    // 5. Cross-field: Height and girth consistency
+    // If height < 0.5 and girth > 1.0 -> Inconsistent
+    if (h < 0.5 && g > 1.0) {
+      return "Height and girth measurements seem inconsistent";
+    }
+
+    // 6. Cross-field: Canopy vs Height
+    // If canopy_diameter > height * 2 -> Inconsistent
+    if (cd != null && cd > h * 2) {
+      return "Canopy diameter seems too large relative to tree height";
+    }
+
+    return null; // Valid
+  }
 }
 
 

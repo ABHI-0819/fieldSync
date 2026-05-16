@@ -15,9 +15,9 @@ Future<XFile?> compressImage(File file) async {
   final compressedFile = await FlutterImageCompress.compressAndGetFile(
     file.absolute.path,
     targetPath,
-    quality: 70,              // 0-100 (lower = smaller file)
-    minWidth: 800,            // ✅ limit max width
-    minHeight: 800,           // ✅ limit max height
+    quality: 90,              // Increased quality for better detail (2MB-3MB range)
+    minWidth: 1920,           // Increased resolution for high-end devices
+    minHeight: 1080,
     format: CompressFormat.jpeg,
   );
 

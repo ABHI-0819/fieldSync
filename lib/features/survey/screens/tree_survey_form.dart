@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
+import '../../../core/utils/image_compression_helper.dart';
 
 import '../../../common/bloc/api_event.dart';
 import '../../../common/bloc/api_state.dart';
@@ -140,7 +141,14 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
     try {
       final XFile? image = await picker.pickImage(source: source);
       if (image != null) {
-        // Get application directory to store images locally
+        EasyLoading.show(status: 'Processing image...');
+
+        // 1. Compress image to target 2MB-3MB quality
+        final compressedXFile = await compressImage(File(image.path));
+        final File imageToSave =
+            compressedXFile != null ? File(compressedXFile.path) : File(image.path);
+
+        // 2. Get application directory to store images locally
         final appDir = await getApplicationDocumentsDirectory();
         final photosDir = Directory(p.join(appDir.path, 'tree_photos'));
 
@@ -148,20 +156,22 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
           await photosDir.create(recursive: true);
         }
 
-        // Generate unique name: clientUuid_serialNo.extension
-        final String extension = p.extension(image.path);
+        // 3. Generate unique name: clientUuid_serialNo.extension
+        final String extension = p.extension(imageToSave.path);
         final int serialNo = _selectedImages.length + 1;
         final String newFileName = '${_formUuid}_$serialNo$extension';
         final String newPath = p.join(photosDir.path, newFileName);
 
-        // Copy image to the new location with the formatted name
-        final File savedImage = await File(image.path).copy(newPath);
+        // 4. Copy compressed image to the new location
+        final File savedImage = await imageToSave.copy(newPath);
 
         setState(() {
           _selectedImages.add(savedImage);
         });
+        EasyLoading.dismiss();
       }
     } catch (e) {
+      EasyLoading.dismiss();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to save image: $e')),
       );
@@ -174,59 +184,33 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
     });
   }
 
+  void _showErrorSnackBar(String message) {
+    IconSnackBar.show(
+      context,
+      snackBarType: SnackBarType.alert,
+      label: message,
+      backgroundColor: Colors.red,
+      iconColor: Colors.white,
+    );
+  }
+
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      // 1. Basic selection checks (not covered by TextFormField validators)
       if (_selectedSpecies == null) {
-        IconSnackBar.show(
-          context,
-          snackBarType: SnackBarType.alert,
-          label: 'Please select the tree species',
-          backgroundColor: Colors.red,
-          iconColor: Colors.white,
-        );
-        return;
-      }
-      if (_heightController.text.isEmpty) {
-        IconSnackBar.show(
-          context,
-          snackBarType: SnackBarType.alert,
-          label: 'Please enter the height',
-          backgroundColor: Colors.red,
-          iconColor: Colors.white,
-        );
-        return;
-      }
-      if (_girthController.text.isEmpty) {
-        IconSnackBar.show(
-          context,
-          snackBarType: SnackBarType.alert,
-          label: 'Please enter the girth',
-          backgroundColor: Colors.red,
-          iconColor: Colors.white,
-        );
+        _showErrorSnackBar('Please select the tree species');
         return;
       }
       if (_selectedHealthStatus == null) {
-        IconSnackBar.show(
-          context,
-          snackBarType: SnackBarType.alert,
-          label: 'Please select health status',
-          backgroundColor: Colors.red,
-          iconColor: Colors.white,
-        );
+        _showErrorSnackBar('Please select health status');
         return;
       }
       if (_selectedImages.isEmpty) {
-        IconSnackBar.show(
-          context,
-          snackBarType: SnackBarType.alert,
-          label: 'Please upload at least one image',
-          backgroundColor: Colors.red,
-          iconColor: Colors.white,
-        );
+        _showErrorSnackBar('Please upload at least one image');
         return;
       }
 
+      // 2. Construct the request object
       final request = TreeSurveyRequest(
         project: widget.projectId,
         species: _selectedSpecies!.id,
@@ -248,6 +232,13 @@ class _TreeSurveyFormScreenState extends State<TreeSurveyFormScreen> {
         remark: _remarkController.text.trim(),
         fieldOfficer: _fieldOfficerController.text.trim(),
       );
+
+      // 3. Perform comprehensive validation (ranges & consistency)
+      final validationError = request.validate();
+      if (validationError != null) {
+        _showErrorSnackBar(validationError);
+        return;
+      }
       if (widget.isOfflineMode) {
         // Save locally to Hive
         final offlineSurvey = OfflineTreeSurvey(
