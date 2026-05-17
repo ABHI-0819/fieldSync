@@ -37,9 +37,9 @@ import '../../../core/utils/logger.dart';
 import '../../project/models/project_detail_response_model.dart';
 import '../../survey/bloc/tree_survey_bloc.dart';
 import '../../survey/models/tree_survey_list_model.dart';
+import '../../sync/models/offline_tree_survey.dart';
 import '../../../common/screens/offline_tree_marker_bottomsheet.dart';
-import '../../sync/models/offline_tree_survey.dart';
-import '../../sync/models/offline_tree_survey.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 @RoutePage()
 class MapScreen extends StatefulWidget {
@@ -321,38 +321,41 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     }
 
     final selected = _selectedLocation!;
-    final polygonLatLngs = _projectDetail?.polygonLatLngs;
+    bool hasBoundary = false;
+    final List<List<turf.Position>> polygonCoords;
+
+    if (widget.isOfflineMode) {
+      hasBoundary = _offlinePolygonPoints != null && _offlinePolygonPoints!.isNotEmpty;
+      if (hasBoundary) {
+        polygonCoords = [
+          _offlinePolygonPoints!
+              .map((p) => turf.Position(p.longitude, p.latitude))
+              .toList()
+        ];
+      } else {
+        polygonCoords = [];
+      }
+    } else {
+      final polygonLatLngs = _projectDetail?.polygonLatLngs;
+      hasBoundary = polygonLatLngs != null && polygonLatLngs.isNotEmpty;
+      if (hasBoundary) {
+        polygonCoords = [
+          polygonLatLngs
+              .map((p) => turf.Position(p.longitude, p.latitude))
+              .toList()
+        ];
+      } else {
+        polygonCoords = [];
+      }
+    }
 
     // CASE 1: No polygon → allow anywhere
-    if (polygonLatLngs == null || polygonLatLngs.isEmpty) {
+    if (!hasBoundary) {
       _navigateToSurvey(selected);
       return;
     }
 
     // CASE 2: Polygon exists → validate
-    final List<List<turf.Position>> polygonCoords;
-    if (widget.isOfflineMode) {
-      if (_offlinePolygonPoints == null || _offlinePolygonPoints!.isEmpty) {
-        _navigateToSurvey(selected);
-        return;
-      }
-      polygonCoords = [
-        _offlinePolygonPoints!
-            .map((p) => turf.Position(p.longitude, p.latitude))
-            .toList()
-      ];
-    } else {
-      if (polygonLatLngs == null || polygonLatLngs.isEmpty) {
-        _navigateToSurvey(selected);
-        return;
-      }
-      polygonCoords = [
-        polygonLatLngs
-            .map((p) => turf.Position(p.longitude, p.latitude))
-            .toList()
-      ];
-    }
-
     final bool isInside = isPointInsidePolygon(
       latitude: selected.latitude,
       longitude: selected.longitude,
@@ -519,48 +522,53 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
   List<Widget> buildTreesMapLayer(BuildContext context) {
     if (widget.isOfflineMode) {
-      final offlineTrees = HiveSetup.surveysBox.values
-          .where((tree) => tree.project == widget.projectId)
-          .toList();
-
-      final markers = offlineTrees
-          .where((tree) => tree.latitude != null && tree.longitude != null)
-          .map((tree) {
-        final point = latlng.LatLng(tree.latitude, tree.longitude);
-
-        return Marker(
-          point: point,
-          width: 40,
-          height: 40,
-          rotate: true,
-          child: GestureDetector(
-            onTap: () {
-              _showOfflineTreeDetails(context, tree);
-            },
-            child: SvgPicture.asset(
-              Images.markerIcon,
-            ),
-          ),
-        );
-      }).toList();
-
-      if (markers.isEmpty) {
-        return const [SizedBox.shrink()];
-      }
-
       return [
-        MarkerClusterLayerWidget(
-          options: MarkerClusterLayerOptions(
-            maxClusterRadius: 45,
-            size: const Size(42, 42),
-            padding: const EdgeInsets.all(8),
-            maxZoom: 20,
-            markers: markers,
-            rotate: true,
-            builder: (context, markers) {
-              return _buildClusterWidget(markers.length.toString());
-            },
-          ),
+        ValueListenableBuilder<Box<OfflineTreeSurvey>>(
+          valueListenable: HiveSetup.surveysBox.listenable(),
+          builder: (context, box, _) {
+            final offlineTrees = box.values
+                .where((tree) => tree.project == widget.projectId)
+                .toList();
+
+            final markers = offlineTrees
+                .where((tree) => tree.latitude != null && tree.longitude != null)
+                .map((tree) {
+              final point = latlng.LatLng(tree.latitude, tree.longitude);
+
+              return Marker(
+                point: point,
+                width: 40,
+                height: 40,
+                rotate: true,
+                child: GestureDetector(
+                  onTap: () {
+                    _showOfflineTreeDetails(context, tree);
+                  },
+                  child: SvgPicture.asset(
+                    Images.markerIcon,
+                  ),
+                ),
+              );
+            }).toList();
+
+            if (markers.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            return MarkerClusterLayerWidget(
+              options: MarkerClusterLayerOptions(
+                maxClusterRadius: 45,
+                size: const Size(42, 42),
+                padding: const EdgeInsets.all(8),
+                maxZoom: 20,
+                markers: markers,
+                rotate: true,
+                builder: (context, markers) {
+                  return _buildClusterWidget(markers.length.toString());
+                },
+              ),
+            );
+          },
         )
       ];
     }
